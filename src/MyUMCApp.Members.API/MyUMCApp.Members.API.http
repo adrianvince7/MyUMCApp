@@ -1,0 +1,6 @@
+@MyUMCApp.Members.API_HostAddress = http://localhost:5147
+
+GET {{MyUMCApp.Members.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

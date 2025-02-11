@@ -1,0 +1,96 @@
+The United Methodist Church Members Application MyUMCApp
+
+This is a simple mobile application that allows you to manage your United Methodist Church membership.
+
+Features:
+- Users should be able to register and login to the application.
+- Users should be able to reset their password.
+- Users should be able to logout from the application.
+- Users should be able to view the application in different languages (English, Shona, Ndebele).
+- Users should be able to view the application in different themes (Light, Dark).
+- User types are:
+    - Administrator
+    - Developer
+    - Guest
+    - Member
+    - Church Leader
+
+A member and church leader will be very similar in the application.
+a member will have a profile with the following information:
+    - Name
+    - Organization (UMYF, RRW, MUMC, Junior Church, etc)
+    - Contact Information
+    - Giving History
+    - Church History
+    - Church Membership History
+    - Church Events
+    - Church Announcements
+    - Church Sermons
+    - Church Blog
+    - Church Store
+    - Church Calendar
+    
+- the application should have a consistent design language.
+- the application should have a consistent color scheme.
+- the application should have a consistent font.
+- the application should have a consistent icon set.
+- the application should have a consistent button style.
+- the application should have a consistent input style.
+- the application should have a consistent alert style.
+
+- As a member, you can view your membership information, update your contact information, and view your giving history.
+- As a church leader, you can view all members and their information, and update their contact information.
+- as a user you can buy merchendise from the church store. WHich is managed in a backend portal
+- as a user you can view the church calendar and events in an interactive calendar view.
+- event alerts should be sent to the user when a new event is added to the calendar by them or the church administrator.
+- the events should alert the user when the event is about to start.
+- the events should alert the user when the event is live.
+- the events should alert the user when the event is over.
+- as a user you can view the church announcements.
+- the announcements should alert the user when a new announcement is added to the church announcements.
+- as a user you can view the church sermons.
+- the sermons should alert the user when a new sermon is added to the church sermons.
+- the sermons should be able to be downloaded and played offline as videos or audio only.
+- the sermons should be able to be played in the background.
+- the sermons should be able to be shared with other users through deep links.
+- the sermons should be able to be commented on.
+- the sermons should be able to be rated.
+- the sermons should be able to be shared on social media.
+- the sermons should be able to be downloaded and played offline.
+- as a user you can view the church blog.
+- the blog should alert the user when a new blog post is added to the church blog.
+- as a user you can view the church events content, browse the church events, and register for the church events.
+- the developer and administrators should be able to manage the content of the application from a backend portal.
+- the developer and administrators should be able to manage the church store from a backend portal.
+- the developer and administrators should be able to manage the church calendar and events from a backend portal.
+- the developer and administrators should be able to manage the church announcements from a backend portal.
+- the developer and administrators should be able to manage the church sermons from a backend portal.
+- the developer and administrators should be able to manage the church blog from a backend portal.
+- the developer and administrators should be able to manage the church events from a backend portal.
+- the store should display the products in categories and subcategories.
+- the store should display the products in a grid view and a list view.
+- the store should display the products in a search view.
+- the store should display the products in a filter view.
+- the store should display the products in a sort view.
+- the store should display the products in a detail view.
+- the store should display the products in a cart view.
+- the store should display the products in a checkout view.
+- the store should display the products in a payment view.
+- the store should display the products in a confirmation view.
+- the store should display the products in a receipt view.
+
+
+
+- All the data should be stored in a secure and reliable database.
+- The application should be able to handle a large number of users.
+- The application should be able to handle a large number of transactions.
+- The application should be able to handle a large number of events.
+- The application should be able to handle a large number of announcements.
+- The application should be able to handle a large number of sermons.
+- The application should be able to handle a large number of blog posts.
+
+The application should handle payments using ECOCASH, OneMoney, and Paynow.
+
+
+
+

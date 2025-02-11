@@ -1,0 +1,169 @@
+@using MyUMCApp.Shared.Models.Auth
+@using MyUMCApp.Shared.Models
+@using MyUMCApp.Shared.Services
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<div class="auth-container">
+    <div class="auth-form">
+        <h2>Register</h2>
+        
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger">@_errorMessage</div>
+        }
+
+        <EditForm Model="@_registerRequest" OnValidSubmit="HandleRegisterAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="_registerRequest.Email" />
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <InputText id="firstName" class="form-control" @bind-Value="_registerRequest.FirstName" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <InputText id="lastName" class="form-control" @bind-Value="_registerRequest.LastName" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number</label>
+                <InputText id="phoneNumber" class="form-control" @bind-Value="_registerRequest.PhoneNumber" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <InputText id="password" type="password" class="form-control" @bind-Value="_registerRequest.Password" />
+                <small class="form-text text-muted">
+                    Password must be at least 8 characters long and contain uppercase, lowercase, numbers, and special characters.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <InputText id="confirmPassword" type="password" class="form-control" @bind-Value="_confirmPassword" />
+            </div>
+
+            <div class="form-group">
+                <label for="userType">Register as</label>
+                <InputSelect id="userType" class="form-control" @bind-Value="_registerRequest.Type">
+                    <option value="@UserType.Member">Member</option>
+                    <option value="@UserType.Guest">Guest</option>
+                </InputSelect>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Processing...</span>
+                }
+                else
+                {
+                    <span>Register</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="mt-3 text-center">
+            <p>Already have an account? <a href="/auth/login">Login</a></p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest _registerRequest = new("", "", "", "", "", UserType.Member);
+    private string _confirmPassword = "";
+    private bool _isLoading;
+    private string? _errorMessage;
+
+    private async Task HandleRegisterAsync()
+    {
+        if (_registerRequest.Password != _confirmPassword)
+        {
+            _errorMessage = "Passwords do not match";
+            return;
+        }
+
+        try
+        {
+            _isLoading = true;
+            _errorMessage = null;
+
+            var response = await AuthService.RegisterAsync(_registerRequest);
+
+            if (response.Successful)
+            {
+                NavigationManager.NavigateTo("/auth/confirm-email");
+            }
+            else
+            {
+                _errorMessage = response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An error occurred during registration. Please try again.";
+            Console.Error.WriteLine($"Registration error: {ex}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f8f9fa;
+        padding: 2rem 0;
+    }
+
+    .auth-form {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 600px;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #7b1fa2;
+        border-color: #7b1fa2;
+    }
+
+    .btn-primary:hover {
+        background-color: #6a1b9a;
+        border-color: #6a1b9a;
+    }
+
+    a {
+        color: #7b1fa2;
+        text-decoration: none;
+    }
+
+    a:hover {
+        color: #6a1b9a;
+        text-decoration: underline;
+    }
+</style> 

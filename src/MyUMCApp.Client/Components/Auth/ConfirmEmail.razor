@@ -1,0 +1,197 @@
+@using MyUMCApp.Shared.Models.Auth
+@using MyUMCApp.Shared.Services
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<div class="auth-container">
+    <div class="auth-form">
+        <h2>Confirm Your Email</h2>
+        
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger">@_errorMessage</div>
+        }
+
+        @if (!string.IsNullOrEmpty(_successMessage))
+        {
+            <div class="alert alert-success">@_successMessage</div>
+        }
+
+        <EditForm Model="@_confirmRequest" OnValidSubmit="HandleConfirmAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="_confirmRequest.Email" />
+            </div>
+
+            <div class="form-group">
+                <label for="code">Confirmation Code</label>
+                <InputText id="code" class="form-control" @bind-Value="_confirmRequest.Code" />
+                <small class="form-text text-muted">
+                    Please enter the confirmation code sent to your email address.
+                </small>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Verifying...</span>
+                }
+                else
+                {
+                    <span>Confirm Email</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="mt-3">
+            <button class="btn btn-link w-100" @onclick="HandleResendCodeAsync" disabled="@_isResending">
+                @if (_isResending)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Sending...</span>
+                }
+                else
+                {
+                    <span>Resend confirmation code</span>
+                }
+            </button>
+        </div>
+
+        <div class="mt-3 text-center">
+            <p>Back to <a href="/auth/login">Login</a></p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ConfirmRegistrationRequest _confirmRequest = new("", "");
+    private bool _isLoading;
+    private bool _isResending;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    private async Task HandleConfirmAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            var response = await AuthService.ConfirmRegistrationAsync(_confirmRequest);
+
+            if (response.Successful)
+            {
+                _successMessage = "Email confirmed successfully. Redirecting to login...";
+                await Task.Delay(2000); // Show success message for 2 seconds
+                NavigationManager.NavigateTo("/auth/login");
+            }
+            else
+            {
+                _errorMessage = response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An error occurred during confirmation. Please try again.";
+            Console.Error.WriteLine($"Confirmation error: {ex}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleResendCodeAsync()
+    {
+        try
+        {
+            _isResending = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            var response = await AuthService.RegisterAsync(new RegisterRequest(
+                _confirmRequest.Email,
+                "", // Password not needed for resend
+                "", // FirstName not needed for resend
+                "", // LastName not needed for resend
+                "" // PhoneNumber not needed for resend
+            ));
+
+            if (response.Successful)
+            {
+                _successMessage = "A new confirmation code has been sent to your email.";
+            }
+            else
+            {
+                _errorMessage = response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An error occurred while resending the code. Please try again.";
+            Console.Error.WriteLine($"Resend code error: {ex}");
+        }
+        finally
+        {
+            _isResending = false;
+        }
+    }
+}
+
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f8f9fa;
+    }
+
+    .auth-form {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #7b1fa2;
+        border-color: #7b1fa2;
+    }
+
+    .btn-primary:hover {
+        background-color: #6a1b9a;
+        border-color: #6a1b9a;
+    }
+
+    .btn-link {
+        color: #7b1fa2;
+        text-decoration: none;
+    }
+
+    .btn-link:hover {
+        color: #6a1b9a;
+        text-decoration: underline;
+    }
+
+    a {
+        color: #7b1fa2;
+        text-decoration: none;
+    }
+
+    a:hover {
+        color: #6a1b9a;
+        text-decoration: underline;
+    }
+</style> 

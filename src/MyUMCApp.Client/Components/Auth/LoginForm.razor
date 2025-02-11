@@ -1,0 +1,141 @@
+@using MyUMCApp.Shared.Models.Auth
+@using MyUMCApp.Shared.Services
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+@inject IConfiguration Configuration
+
+<div class="auth-container">
+    <div class="auth-form">
+        <h2>Login</h2>
+        
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger">@_errorMessage</div>
+        }
+
+        <EditForm Model="@_loginRequest" OnValidSubmit="HandleLoginAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="_loginRequest.Email" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <InputText id="password" type="password" class="form-control" @bind-Value="_loginRequest.Password" />
+            </div>
+
+            <div class="form-group d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="_rememberMe" />
+                    <label class="form-check-label" for="rememberMe">Remember me</label>
+                </div>
+                <a href="/auth/forgot-password">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>Loading...</span>
+                }
+                else
+                {
+                    <span>Login</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="mt-3 text-center">
+            <p>Don't have an account? <a href="/auth/register">Register</a></p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginRequest _loginRequest = new("", "");
+    private bool _rememberMe;
+    private bool _isLoading;
+    private string? _errorMessage;
+
+    private async Task HandleLoginAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _errorMessage = null;
+
+            var response = await AuthService.LoginAsync(_loginRequest);
+
+            if (response.Successful)
+            {
+                // Store tokens
+                await LocalStorage.SetItemAsync("access_token", response.AccessToken);
+                if (_rememberMe && response.RefreshToken != null)
+                {
+                    await LocalStorage.SetItemAsync("refresh_token", response.RefreshToken);
+                }
+
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                _errorMessage = response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An error occurred during login. Please try again.";
+            Console.Error.WriteLine($"Login error: {ex}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f8f9fa;
+    }
+
+    .auth-form {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #7b1fa2;
+        border-color: #7b1fa2;
+    }
+
+    .btn-primary:hover {
+        background-color: #6a1b9a;
+        border-color: #6a1b9a;
+    }
+
+    a {
+        color: #7b1fa2;
+        text-decoration: none;
+    }
+
+    a:hover {
+        color: #6a1b9a;
+        text-decoration: underline;
+    }
+</style> 

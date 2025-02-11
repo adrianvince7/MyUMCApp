@@ -2,8 +2,11 @@
 @using MyUMCApp.Shared.Models.Auth
 @using MyUMCApp.Shared.Services
 @using MyUMCApp.Client.Auth
+@using MyUMCApp.Client.Services
+@using Microsoft.AspNetCore.Components.Forms
 @attribute [Authorize(Policy = AuthorizationPolicies.RequireActiveUser)]
 @inject IAuthService AuthService
+@inject IProfilePictureService ProfilePictureService
 @inject NavigationManager NavigationManager
 
 <div class="profile-container">
@@ -34,8 +37,17 @@
                             @_profile.FirstName[0]@_profile.LastName[0]
                         </div>
                     }
-                    <button class="btn btn-outline-primary mt-2" @onclick="HandleUploadPicture">
-                        Change Picture
+                    <InputFile OnChange="HandleFileSelected" accept=".jpg,.jpeg,.png" class="d-none" id="fileInput" />
+                    <button class="btn btn-outline-primary mt-2" @onclick="() => HandleUploadPicture()">
+                        @if (_isUploadingPicture)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span>Uploading...</span>
+                        }
+                        else
+                        {
+                            <span>Change Picture</span>
+                        }
                     </button>
                 </div>
 
@@ -268,6 +280,9 @@
     private bool _showChangePassword;
     private string? _successMessage;
     private string? _errorMessage;
+    private bool _isUploadingPicture;
+    private const int MaxFileSize = 5 * 1024 * 1024; // 5MB
+    private const string AllowedExtensions = ".jpg,.jpeg,.png";
 
     protected override async Task OnInitializedAsync()
     {
@@ -361,7 +376,69 @@
 
     private void HandleUploadPicture()
     {
-        // TODO: Implement profile picture upload
-        _errorMessage = "Profile picture upload is not implemented yet.";
+        var fileInput = Document.GetElementById("fileInput");
+        if (fileInput != null)
+        {
+            fileInput.Click();
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null)
+            {
+                _errorMessage = "No file selected.";
+                return;
+            }
+
+            // Validate file size
+            if (file.Size > MaxFileSize)
+            {
+                _errorMessage = "File size must be less than 5MB.";
+                return;
+            }
+
+            // Validate file type
+            var extension = Path.GetExtension(file.Name).ToLowerInvariant();
+            if (!AllowedExtensions.Contains(extension))
+            {
+                _errorMessage = "Only .jpg, .jpeg, and .png files are allowed.";
+                return;
+            }
+
+            _isUploadingPicture = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            try
+            {
+                var stream = file.OpenReadStream(MaxFileSize);
+                var url = await ProfilePictureService.UploadProfilePictureAsync(stream, file.Name);
+
+                if (url != null)
+                {
+                    _profile.ProfilePictureUrl = url;
+                    await HandleUpdateProfile();
+                    _successMessage = "Profile picture updated successfully.";
+                }
+                else
+                {
+                    _errorMessage = "Failed to upload profile picture. Please try again.";
+                }
+            }
+            finally
+            {
+                _isUploadingPicture = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An error occurred while uploading the profile picture.";
+            Console.Error.WriteLine($"Error uploading profile picture: {ex}");
+            _isUploadingPicture = false;
+        }
     }
 } 

@@ -5,6 +5,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add AWS services
+builder.Services.AddAWSService<IAmazonS3>();
+builder.Services.AddScoped<IProfileStorageService, ProfileStorageService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

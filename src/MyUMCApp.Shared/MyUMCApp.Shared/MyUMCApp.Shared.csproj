@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="3.7.301.11" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
   </ItemGroup>
 
 </Project>

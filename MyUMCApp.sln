@@ -7,6 +7,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3CBD0B87-146
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUMCApp.Client", "src\MyUMCApp.Client\MyUMCApp.Client.csproj", "{E028334E-9A48-4DD4-B4D9-B8A1560D5DCA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "infrastructure", "infrastructure", "{07D8646D-B387-423E-9DE5-9D57314E05AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUMCApp.Infrastructure", "infrastructure\MyUMCApp.Infrastructure\MyUMCApp.Infrastructure.csproj", "{AE2B1AC5-1C5D-442B-B14F-5B79C7B3CC89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,8 +24,13 @@ Global
 		{E028334E-9A48-4DD4-B4D9-B8A1560D5DCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E028334E-9A48-4DD4-B4D9-B8A1560D5DCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E028334E-9A48-4DD4-B4D9-B8A1560D5DCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE2B1AC5-1C5D-442B-B14F-5B79C7B3CC89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE2B1AC5-1C5D-442B-B14F-5B79C7B3CC89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE2B1AC5-1C5D-442B-B14F-5B79C7B3CC89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE2B1AC5-1C5D-442B-B14F-5B79C7B3CC89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E028334E-9A48-4DD4-B4D9-B8A1560D5DCA} = {3CBD0B87-1460-4E84-B97E-0AA9CF222F51}
+		{AE2B1AC5-1C5D-442B-B14F-5B79C7B3CC89} = {07D8646D-B387-423E-9DE5-9D57314E05AF}
 	EndGlobalSection
 EndGlobal

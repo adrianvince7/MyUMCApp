@@ -1,0 +1,367 @@
+@page "/profile"
+@using MyUMCApp.Shared.Models.Auth
+@using MyUMCApp.Shared.Services
+@using MyUMCApp.Client.Auth
+@attribute [Authorize(Policy = AuthorizationPolicies.RequireActiveUser)]
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<div class="profile-container">
+    <div class="profile-header">
+        <h1>My Profile</h1>
+        @if (!string.IsNullOrEmpty(_successMessage))
+        {
+            <div class="alert alert-success">@_successMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger">@_errorMessage</div>
+        }
+    </div>
+
+    @if (_profile != null)
+    {
+        <div class="profile-content">
+            <div class="profile-section">
+                <div class="profile-picture">
+                    @if (!string.IsNullOrEmpty(_profile.ProfilePictureUrl))
+                    {
+                        <img src="@_profile.ProfilePictureUrl" alt="Profile Picture" />
+                    }
+                    else
+                    {
+                        <div class="profile-picture-placeholder">
+                            @_profile.FirstName[0]@_profile.LastName[0]
+                        </div>
+                    }
+                    <button class="btn btn-outline-primary mt-2" @onclick="HandleUploadPicture">
+                        Change Picture
+                    </button>
+                </div>
+
+                <EditForm Model="@_profile" OnValidSubmit="HandleUpdateProfile">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <InputText id="firstName" class="form-control" @bind-Value="_profile.FirstName" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <InputText id="lastName" class="form-control" @bind-Value="_profile.LastName" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <InputText id="email" class="form-control" @bind-Value="_profile.Email" disabled />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phoneNumber">Phone Number</label>
+                        <InputText id="phoneNumber" class="form-control" @bind-Value="_profile.PhoneNumber" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="language">Preferred Language</label>
+                        <InputSelect id="language" class="form-control" @bind-Value="_profile.PreferredLanguage">
+                            <option value="en">English</option>
+                            <option value="sn">Shona</option>
+                            <option value="nd">Ndebele</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" disabled="@_isLoading">
+                            @if (_isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span>Saving...</span>
+                            }
+                            else
+                            {
+                                <span>Save Changes</span>
+                            }
+                        </button>
+                        <button type="button" class="btn btn-secondary" @onclick="HandleChangePassword">
+                            Change Password
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+
+            @if (_showChangePassword)
+            {
+                <div class="profile-section">
+                    <h2>Change Password</h2>
+                    <EditForm Model="@_changePasswordRequest" OnValidSubmit="HandlePasswordChange">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password</label>
+                            <InputText type="password" id="currentPassword" class="form-control" 
+                                     @bind-Value="_changePasswordRequest.CurrentPassword" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <InputText type="password" id="newPassword" class="form-control" 
+                                     @bind-Value="_changePasswordRequest.NewPassword" />
+                            <small class="form-text text-muted">
+                                Password must be at least 8 characters long and contain uppercase, lowercase, 
+                                numbers, and special characters.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm New Password</label>
+                            <InputText type="password" id="confirmPassword" class="form-control" 
+                                     @bind-Value="_changePasswordRequest.ConfirmPassword" />
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" disabled="@_isChangingPassword">
+                                @if (_isChangingPassword)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span>Updating...</span>
+                                }
+                                else
+                                {
+                                    <span>Update Password</span>
+                                }
+                            </button>
+                            <button type="button" class="btn btn-link" @onclick="() => _showChangePassword = false">
+                                Cancel
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .profile-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .profile-header {
+        margin-bottom: 2rem;
+    }
+
+    .profile-content {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-section {
+        padding: 2rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .profile-section:last-child {
+        border-bottom: none;
+    }
+
+    .profile-picture {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .profile-picture img {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .profile-picture-placeholder {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background-color: #7b1fa2;
+        color: white;
+        font-size: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-primary {
+        background-color: #7b1fa2;
+        border-color: #7b1fa2;
+    }
+
+    .btn-primary:hover {
+        background-color: #6a1b9a;
+        border-color: #6a1b9a;
+    }
+
+    .btn-outline-primary {
+        color: #7b1fa2;
+        border-color: #7b1fa2;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #7b1fa2;
+        border-color: #7b1fa2;
+        color: white;
+    }
+
+    .loading-spinner {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+    }
+
+    .alert {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        border-radius: 4px;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+</style>
+
+@code {
+    private UserProfile? _profile;
+    private ChangePasswordRequest _changePasswordRequest = new();
+    private bool _isLoading;
+    private bool _isChangingPassword;
+    private bool _showChangePassword;
+    private string? _successMessage;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // TODO: Get actual user ID from claims
+            var userId = "user-id";
+            _profile = await AuthService.GetUserProfileAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "Failed to load profile. Please try again.";
+            Console.Error.WriteLine($"Error loading profile: {ex}");
+        }
+    }
+
+    private async Task HandleUpdateProfile()
+    {
+        if (_profile == null) return;
+
+        try
+        {
+            _isLoading = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            // TODO: Get actual user ID from claims
+            var userId = "user-id";
+            var success = await AuthService.UpdateUserProfileAsync(userId, _profile);
+
+            if (success)
+            {
+                _successMessage = "Profile updated successfully.";
+            }
+            else
+            {
+                _errorMessage = "Failed to update profile. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An unexpected error occurred. Please try again.";
+            Console.Error.WriteLine($"Error updating profile: {ex}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandlePasswordChange()
+    {
+        try
+        {
+            _isChangingPassword = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            // TODO: Get actual user ID from claims
+            var userId = "user-id";
+            var response = await AuthService.ChangePasswordAsync(userId, _changePasswordRequest);
+
+            if (response.Successful)
+            {
+                _successMessage = "Password changed successfully.";
+                _showChangePassword = false;
+                _changePasswordRequest = new();
+            }
+            else
+            {
+                _errorMessage = response.Error ?? "Failed to change password. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An unexpected error occurred. Please try again.";
+            Console.Error.WriteLine($"Error changing password: {ex}");
+        }
+        finally
+        {
+            _isChangingPassword = false;
+        }
+    }
+
+    private void HandleChangePassword()
+    {
+        _showChangePassword = true;
+        _errorMessage = null;
+        _successMessage = null;
+    }
+
+    private void HandleUploadPicture()
+    {
+        // TODO: Implement profile picture upload
+        _errorMessage = "Profile picture upload is not implemented yet.";
+    }
+} 

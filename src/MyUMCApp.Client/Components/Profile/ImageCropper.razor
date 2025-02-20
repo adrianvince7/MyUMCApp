@@ -1,0 +1,171 @@
+@inject IJSRuntime JSRuntime
+
+<div class="image-cropper">
+    @if (_showCropper)
+    {
+        <div class="cropper-container">
+            <img id="@_imageId" src="@_imageUrl" style="max-width: 100%;" />
+        </div>
+        <div class="cropper-controls mt-3">
+            <button class="btn btn-primary" @onclick="ApplyCrop">Apply</button>
+            <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string ImageUrl { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> OnCropComplete { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private readonly string _imageId = $"cropper-{Guid.NewGuid():N}";
+    private bool _showCropper;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _cropper;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(ImageUrl))
+        {
+            _showCropper = true;
+            await InitializeCropper();
+        }
+    }
+
+    private async Task InitializeCropper()
+    {
+        try
+        {
+            if (_module == null)
+            {
+                _module = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                    "import", "./js/imageCropper.js");
+            }
+
+            if (_cropper != null)
+            {
+                await _cropper.DisposeAsync();
+            }
+
+            _cropper = await _module.InvokeAsync<IJSObjectReference>(
+                "initCropper", _imageId, new
+                {
+                    aspectRatio = 1,
+                    viewMode = 1,
+                    dragMode = "move",
+                    autoCropArea = 1,
+                    responsive = true,
+                    restore = false,
+                    guides = true,
+                    center = true,
+                    highlight = false,
+                    cropBoxMovable = true,
+                    cropBoxResizable = true,
+                    toggleDragModeOnDblclick = false
+                });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error initializing cropper: {ex}");
+        }
+    }
+
+    private async Task ApplyCrop()
+    {
+        try
+        {
+            if (_module != null && _cropper != null)
+            {
+                var croppedImage = await _module.InvokeAsync<string>("getCroppedImage", _cropper);
+                await OnCropComplete.InvokeAsync(croppedImage);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error applying crop: {ex}");
+        }
+        finally
+        {
+            await CleanupCropper();
+        }
+    }
+
+    private async Task Cancel()
+    {
+        await CleanupCropper();
+        await OnCancel.InvokeAsync();
+    }
+
+    private async Task CleanupCropper()
+    {
+        try
+        {
+            if (_cropper != null)
+            {
+                await _cropper.DisposeAsync();
+                _cropper = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error cleaning up cropper: {ex}");
+        }
+        finally
+        {
+            _showCropper = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_cropper != null)
+            {
+                await _cropper.DisposeAsync();
+            }
+            if (_module != null)
+            {
+                await _module.DisposeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error disposing cropper: {ex}");
+        }
+    }
+}
+
+<style>
+    .image-cropper {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .cropper-container {
+        max-height: 400px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .cropper-controls {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    :global(.cropper-view-box) {
+        border-radius: 50%;
+        outline: none;
+        box-shadow: 0 0 0 1px #39f;
+    }
+
+    :global(.cropper-face) {
+        background-color: inherit !important;
+    }
+
+    :global(.cropper-view-box) {
+        outline: inherit !important;
+    }
+</style> 

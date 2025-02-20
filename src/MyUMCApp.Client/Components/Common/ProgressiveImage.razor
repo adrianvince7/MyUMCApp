@@ -1,0 +1,102 @@
+@inject IJSRuntime JSRuntime
+
+<div class="progressive-image @(IsLoaded ? "loaded" : "")" style="@_containerStyle">
+    @if (!string.IsNullOrEmpty(ThumbnailUrl))
+    {
+        <img src="@ThumbnailUrl" 
+             class="thumbnail" 
+             style="@_imageStyle"
+             alt="@Alt" />
+    }
+    <img src="@Src"
+         class="full-image"
+         style="@_imageStyle"
+         alt="@Alt"
+         @onload="HandleImageLoaded" />
+</div>
+
+@code {
+    [Parameter] public string Src { get; set; } = string.Empty;
+    [Parameter] public string? ThumbnailUrl { get; set; }
+    [Parameter] public string Alt { get; set; } = string.Empty;
+    [Parameter] public string? Width { get; set; }
+    [Parameter] public string? Height { get; set; }
+    [Parameter] public string? AspectRatio { get; set; }
+    [Parameter] public string? ObjectFit { get; set; } = "cover";
+    [Parameter] public string? BorderRadius { get; set; }
+
+    private bool IsLoaded;
+    private string _containerStyle => GetContainerStyle();
+    private string _imageStyle => GetImageStyle();
+
+    private string GetContainerStyle()
+    {
+        var styles = new List<string>();
+
+        if (!string.IsNullOrEmpty(Width))
+            styles.Add($"width: {Width}");
+
+        if (!string.IsNullOrEmpty(Height))
+            styles.Add($"height: {Height}");
+        else if (!string.IsNullOrEmpty(AspectRatio))
+            styles.Add($"padding-bottom: {AspectRatio}");
+
+        if (!string.IsNullOrEmpty(BorderRadius))
+            styles.Add($"border-radius: {BorderRadius}");
+
+        return string.Join("; ", styles);
+    }
+
+    private string GetImageStyle()
+    {
+        var styles = new List<string>();
+
+        if (!string.IsNullOrEmpty(ObjectFit))
+            styles.Add($"object-fit: {ObjectFit}");
+
+        if (!string.IsNullOrEmpty(BorderRadius))
+            styles.Add($"border-radius: {BorderRadius}");
+
+        return string.Join("; ", styles);
+    }
+
+    private void HandleImageLoaded()
+    {
+        IsLoaded = true;
+    }
+}
+
+<style>
+    .progressive-image {
+        position: relative;
+        overflow: hidden;
+        background-color: #f8f9fa;
+    }
+
+    .progressive-image img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .progressive-image .thumbnail {
+        filter: blur(10px);
+        transform: scale(1.1);
+        transition: visibility 0ms ease 400ms;
+    }
+
+    .progressive-image .full-image {
+        opacity: 0;
+        transition: opacity 400ms ease 0ms;
+    }
+
+    .progressive-image.loaded .thumbnail {
+        visibility: hidden;
+    }
+
+    .progressive-image.loaded .full-image {
+        opacity: 1;
+    }
+</style> 

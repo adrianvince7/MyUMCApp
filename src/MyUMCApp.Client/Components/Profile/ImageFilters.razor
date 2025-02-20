@@ -1,0 +1,259 @@
+@inject IJSRuntime JSRuntime
+
+<div class="image-filters">
+    <div class="filters-preview">
+        <img id="@_imageId" src="@ImageUrl" style="max-width: 100%;" />
+    </div>
+    <div class="filters-controls mt-3">
+        <div class="filters-list">
+            @foreach (var filter in _availableFilters)
+            {
+                <div class="filter-item @(filter.Name == _selectedFilter ? "active" : "")" 
+                     @onclick="() => ApplyFilter(filter.Name)">
+                    <div class="filter-preview" style="@filter.Preview"></div>
+                    <span>@filter.DisplayName</span>
+                </div>
+            }
+        </div>
+        <div class="adjustment-controls mt-3">
+            <div class="form-group">
+                <label>Brightness</label>
+                <input type="range" class="form-range" min="0" max="200" step="1" value="100"
+                       @onchange="HandleBrightnessChange" />
+            </div>
+            <div class="form-group">
+                <label>Contrast</label>
+                <input type="range" class="form-range" min="0" max="200" step="1" value="100"
+                       @onchange="HandleContrastChange" />
+            </div>
+            <div class="form-group">
+                <label>Saturation</label>
+                <input type="range" class="form-range" min="0" max="200" step="1" value="100"
+                       @onchange="HandleSaturationChange" />
+            </div>
+        </div>
+        <div class="action-buttons mt-3">
+            <button class="btn btn-primary" @onclick="ApplyChanges">Apply</button>
+            <button class="btn btn-secondary" @onclick="ResetChanges">Reset</button>
+            <button class="btn btn-outline-secondary" @onclick="Cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string ImageUrl { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> OnFilterComplete { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private readonly string _imageId = $"filter-{Guid.NewGuid():N}";
+    private IJSObjectReference? _module;
+    private string _selectedFilter = "none";
+    private readonly List<ImageFilter> _availableFilters = new()
+    {
+        new("none", "Original", "filter: none;"),
+        new("grayscale", "Black & White", "filter: grayscale(100%);"),
+        new("sepia", "Sepia", "filter: sepia(100%);"),
+        new("vintage", "Vintage", "filter: sepia(50%) contrast(150%);"),
+        new("warm", "Warm", "filter: saturate(150%) brightness(110%);"),
+        new("cool", "Cool", "filter: saturate(80%) hue-rotate(30deg);"),
+        new("dramatic", "Dramatic", "filter: contrast(150%) brightness(90%);"),
+        new("fade", "Fade", "filter: brightness(110%) saturate(80%) opacity(90%);")
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(ImageUrl))
+        {
+            await InitializeFilters();
+        }
+    }
+
+    private async Task InitializeFilters()
+    {
+        try
+        {
+            if (_module == null)
+            {
+                _module = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                    "import", "./js/imageFilters.js");
+            }
+
+            await _module.InvokeVoidAsync("initFilters", _imageId);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error initializing filters: {ex}");
+        }
+    }
+
+    private async Task ApplyFilter(string filterName)
+    {
+        try
+        {
+            if (_module != null)
+            {
+                _selectedFilter = filterName;
+                await _module.InvokeVoidAsync("applyFilter", _imageId, filterName);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error applying filter: {ex}");
+        }
+    }
+
+    private async Task HandleBrightnessChange(ChangeEventArgs e)
+    {
+        if (_module != null && e.Value is string value)
+        {
+            await _module.InvokeVoidAsync("adjustBrightness", _imageId, value);
+        }
+    }
+
+    private async Task HandleContrastChange(ChangeEventArgs e)
+    {
+        if (_module != null && e.Value is string value)
+        {
+            await _module.InvokeVoidAsync("adjustContrast", _imageId, value);
+        }
+    }
+
+    private async Task HandleSaturationChange(ChangeEventArgs e)
+    {
+        if (_module != null && e.Value is string value)
+        {
+            await _module.InvokeVoidAsync("adjustSaturation", _imageId, value);
+        }
+    }
+
+    private async Task ApplyChanges()
+    {
+        try
+        {
+            if (_module != null)
+            {
+                var processedImage = await _module.InvokeAsync<string>("getProcessedImage", _imageId);
+                await OnFilterComplete.InvokeAsync(processedImage);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error applying changes: {ex}");
+        }
+    }
+
+    private async Task ResetChanges()
+    {
+        try
+        {
+            if (_module != null)
+            {
+                await _module.InvokeVoidAsync("resetImage", _imageId);
+                _selectedFilter = "none";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error resetting changes: {ex}");
+        }
+    }
+
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module != null)
+            {
+                await _module.DisposeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error disposing filters: {ex}");
+        }
+    }
+
+    private record ImageFilter(string Name, string DisplayName, string Preview);
+}
+
+<style>
+    .image-filters {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .filters-preview {
+        max-height: 400px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    .filters-preview img {
+        max-height: 400px;
+        width: auto;
+    }
+
+    .filters-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-item {
+        text-align: center;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .filter-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .filter-item.active {
+        background-color: #e9ecef;
+    }
+
+    .filter-preview {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 0.5rem;
+        border-radius: 4px;
+        background-color: #7b1fa2;
+    }
+
+    .filter-item span {
+        font-size: 0.875rem;
+        color: #495057;
+    }
+
+    .adjustment-controls {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #495057;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+</style> 

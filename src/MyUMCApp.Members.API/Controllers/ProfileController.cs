@@ -12,13 +12,16 @@ namespace MyUMCApp.Members.API.Controllers;
 public class ProfileController : ControllerBase
 {
     private readonly IProfileStorageService _storageService;
+    private readonly IImageOptimizationService _imageOptimizationService;
     private readonly ILogger<ProfileController> _logger;
 
     public ProfileController(
         IProfileStorageService storageService,
+        IImageOptimizationService imageOptimizationService,
         ILogger<ProfileController> logger)
     {
         _storageService = storageService;
+        _imageOptimizationService = imageOptimizationService;
         _logger = logger;
     }
 
@@ -50,8 +53,12 @@ public class ProfileController : ControllerBase
             var userId = User.FindFirst("sub")?.Value ?? throw new InvalidOperationException("User ID not found in claims");
             var fileName = $"{userId}-{DateTime.UtcNow:yyyyMMddHHmmss}{extension}";
 
-            using var stream = file.OpenReadStream();
-            var url = await _storageService.UploadProfilePictureAsync(stream, fileName);
+            // Optimize the image
+            using var inputStream = file.OpenReadStream();
+            using var optimizedStream = await _imageOptimizationService.OptimizeImageAsync(inputStream);
+            
+            // Upload the optimized image
+            var url = await _storageService.UploadProfilePictureAsync(optimizedStream, fileName);
 
             return Ok(new { url });
         }

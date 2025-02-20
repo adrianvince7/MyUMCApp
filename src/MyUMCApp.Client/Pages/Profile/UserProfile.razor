@@ -4,6 +4,8 @@
 @using MyUMCApp.Client.Auth
 @using MyUMCApp.Client.Services
 @using Microsoft.AspNetCore.Components.Forms
+@using MyUMCApp.Client.Components.Profile
+@using MyUMCApp.Client.Components.Common
 @attribute [Authorize(Policy = AuthorizationPolicies.RequireActiveUser)]
 @inject IAuthService AuthService
 @inject IProfilePictureService ProfilePictureService
@@ -29,7 +31,13 @@
                 <div class="profile-picture">
                     @if (!string.IsNullOrEmpty(_profile.ProfilePictureUrl))
                     {
-                        <img src="@_profile.ProfilePictureUrl" alt="Profile Picture" />
+                        <ProgressiveImage 
+                            Src="@_profile.ProfilePictureUrl"
+                            ThumbnailUrl="@GetThumbnailUrl(_profile.ProfilePictureUrl)"
+                            Alt="Profile Picture"
+                            Width="150px"
+                            Height="150px"
+                            BorderRadius="50%" />
                     }
                     else
                     {
@@ -37,8 +45,8 @@
                             @_profile.FirstName[0]@_profile.LastName[0]
                         </div>
                     }
-                    <InputFile OnChange="HandleFileSelected" accept=".jpg,.jpeg,.png" class="d-none" id="fileInput" />
-                    <button class="btn btn-outline-primary mt-2" @onclick="() => HandleUploadPicture()">
+                    <InputFile OnChange="HandleFileSelected" accept=".jpg,.jpeg,.png,.gif,.webp" class="d-none" id="fileInput" />
+                    <button class="btn btn-outline-primary mt-2" @onclick="HandleUploadPicture">
                         @if (_isUploadingPicture)
                         {
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -50,6 +58,34 @@
                         }
                     </button>
                 </div>
+
+                @if (_showImageCropper)
+                {
+                    <div class="image-cropper-modal">
+                        <div class="modal-overlay"></div>
+                        <div class="modal-content">
+                            <h3>Crop Profile Picture</h3>
+                            <ImageCropper 
+                                ImageUrl="@_selectedImageUrl"
+                                OnCropComplete="HandleCropComplete"
+                                OnCancel="() => _showImageCropper = false" />
+                        </div>
+                    </div>
+                }
+
+                @if (_showImageFilters)
+                {
+                    <div class="image-filters-modal">
+                        <div class="modal-overlay"></div>
+                        <div class="modal-content">
+                            <h3>Apply Filters</h3>
+                            <ImageFilters 
+                                ImageUrl="@_selectedImageUrl"
+                                OnFilterComplete="HandleFilterComplete"
+                                OnCancel="() => _showImageFilters = false" />
+                        </div>
+                    </div>
+                }
 
                 <EditForm Model="@_profile" OnValidSubmit="HandleUpdateProfile">
                     <DataAnnotationsValidator />
@@ -270,6 +306,54 @@
         border-color: #f5c6cb;
         color: #721c24;
     }
+
+    .image-cropper-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        position: relative;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        max-width: 90%;
+        width: 800px;
+    }
+
+    .modal-content h3 {
+        margin-bottom: 1.5rem;
+        color: #7b1fa2;
+    }
+
+    .image-filters-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
 </style>
 
 @code {
@@ -282,7 +366,10 @@
     private string? _errorMessage;
     private bool _isUploadingPicture;
     private const int MaxFileSize = 5 * 1024 * 1024; // 5MB
-    private const string AllowedExtensions = ".jpg,.jpeg,.png";
+    private const string AllowedExtensions = ".jpg,.jpeg,.png,.gif,.webp";
+    private bool _showImageCropper;
+    private string _selectedImageUrl = string.Empty;
+    private bool _showImageFilters;
 
     protected override async Task OnInitializedAsync()
     {
@@ -405,40 +492,73 @@
             var extension = Path.GetExtension(file.Name).ToLowerInvariant();
             if (!AllowedExtensions.Contains(extension))
             {
-                _errorMessage = "Only .jpg, .jpeg, and .png files are allowed.";
+                _errorMessage = "Only .jpg, .jpeg, .png, .gif, and .webp files are allowed.";
                 return;
             }
 
+            // Create a data URL for the image cropper
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream(MaxFileSize).ReadAsync(buffer);
+            var base64 = Convert.ToBase64String(buffer);
+            var mimeType = file.ContentType;
+            _selectedImageUrl = $"data:{mimeType};base64,{base64}";
+            _showImageCropper = true;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An error occurred while processing the image.";
+            Console.Error.WriteLine($"Error processing image: {ex}");
+        }
+    }
+
+    private async Task HandleCropComplete(string croppedImageUrl)
+    {
+        _selectedImageUrl = croppedImageUrl;
+        _showImageCropper = false;
+        _showImageFilters = true;
+    }
+
+    private async Task HandleFilterComplete(string filteredImageUrl)
+    {
+        try
+        {
             _isUploadingPicture = true;
             _errorMessage = null;
             _successMessage = null;
 
-            try
-            {
-                var stream = file.OpenReadStream(MaxFileSize);
-                var url = await ProfilePictureService.UploadProfilePictureAsync(stream, file.Name);
+            // Convert data URL to stream
+            var base64Data = filteredImageUrl.Split(',')[1];
+            var imageBytes = Convert.FromBase64String(base64Data);
+            var stream = new MemoryStream(imageBytes);
 
-                if (url != null)
-                {
-                    _profile.ProfilePictureUrl = url;
-                    await HandleUpdateProfile();
-                    _successMessage = "Profile picture updated successfully.";
-                }
-                else
-                {
-                    _errorMessage = "Failed to upload profile picture. Please try again.";
-                }
-            }
-            finally
+            var url = await ProfilePictureService.UploadProfilePictureAsync(stream, "profile.jpg");
+
+            if (url != null)
             {
-                _isUploadingPicture = false;
+                _profile.ProfilePictureUrl = url;
+                await HandleUpdateProfile();
+                _successMessage = "Profile picture updated successfully.";
+            }
+            else
+            {
+                _errorMessage = "Failed to upload profile picture. Please try again.";
             }
         }
         catch (Exception ex)
         {
             _errorMessage = "An error occurred while uploading the profile picture.";
             Console.Error.WriteLine($"Error uploading profile picture: {ex}");
-            _isUploadingPicture = false;
         }
+        finally
+        {
+            _isUploadingPicture = false;
+            _showImageFilters = false;
+        }
+    }
+
+    private string GetThumbnailUrl(string originalUrl)
+    {
+        // Add query parameter for CloudFront to generate thumbnail
+        return $"{originalUrl}?w=50&q=50";
     }
 } 

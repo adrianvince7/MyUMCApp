@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -11,6 +10,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "infrastructure", "infrastru
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUMCApp.Infrastructure", "infrastructure\MyUMCApp.Infrastructure\MyUMCApp.Infrastructure.csproj", "{AE2B1AC5-1C5D-442B-B14F-5B79C7B3CC89}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUMCApp.Identity.API", "src\MyUMCApp.Identity.API\MyUMCApp.Identity.API.csproj"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUMCApp.Members.API", "src\MyUMCApp.Members.API\MyUMCApp.Members.API.csproj"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUMCApp.Content.API", "src\MyUMCApp.Content.API\MyUMCApp.Content.API.csproj"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUMCApp.Store.API", "src\MyUMCApp.Store.API\MyUMCApp.Store.API.csproj"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyUMCApp.Shared", "src\MyUMCApp.Shared\MyUMCApp.Shared.csproj"
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

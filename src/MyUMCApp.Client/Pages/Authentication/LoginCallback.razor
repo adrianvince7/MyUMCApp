@@ -1,0 +1,15 @@
+@page "/authentication/login-callback"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+<RemoteAuthenticatorView Action="RemoteAuthenticationActions.LogIn">
+    <LoggingIn>
+        <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="height: 100vh;">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        </MudContainer>
+    </LoggingIn>
+    <CompletingLoggingIn>
+        <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex justify-center align-center" Style="height: 100vh;">
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+        </MudContainer>
+    </CompletingLoggingIn>
+</RemoteAuthenticatorView> 

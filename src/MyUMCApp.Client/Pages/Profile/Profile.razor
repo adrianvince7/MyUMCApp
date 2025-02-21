@@ -1,0 +1,154 @@
+@page "/profile"
+@attribute [Authorize]
+@inject ISnackbar Snackbar
+
+<PageTitle>Profile - United Methodist Church</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="3" Class="rounded-lg">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Profile Information</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudForm @ref="_form" @bind-IsValid="@_success">
+                        <MudTextField T="string" 
+                                    Label="Full Name" 
+                                    @bind-Value="_profile.FullName"
+                                    Required="true"
+                                    RequiredError="Name is required"/>
+                        
+                        <MudSelect T="string" Label="Organization" @bind-Value="_profile.Organization" Required="true">
+                            <MudSelectItem Value="@("UMYF")">UMYF</MudSelectItem>
+                            <MudSelectItem Value="@("RRW")">RRW</MudSelectItem>
+                            <MudSelectItem Value="@("MUMC")">MUMC</MudSelectItem>
+                            <MudSelectItem Value="@("Junior Church")">Junior Church</MudSelectItem>
+                        </MudSelect>
+
+                        <MudTextField T="string" 
+                                    Label="Email" 
+                                    @bind-Value="_profile.Email"
+                                    Required="true"
+                                    RequiredError="Email is required"
+                                    InputType="InputType.Email"/>
+                        
+                        <MudTextField T="string" 
+                                    Label="Phone" 
+                                    @bind-Value="_profile.Phone"
+                                    Required="true"
+                                    RequiredError="Phone is required"/>
+                    </MudForm>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              Class="ml-auto"
+                              OnClick="SaveProfile"
+                              Disabled="@(!_success)">
+                        Save Changes
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="8">
+            <MudTabs Elevation="3" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                <MudTabPanel Text="Church History">
+                    <MudTimeline>
+                        @foreach (var history in _churchHistory)
+                        {
+                            <MudTimelineItem Color="Color.Primary">
+                                <ItemContent>
+                                    <MudText Color="Color.Primary" Typo="Typo.h6">@history.Title</MudText>
+                                    <MudText>@history.Description</MudText>
+                                    <MudText Typo="Typo.caption">@history.Date.ToShortDateString()</MudText>
+                                </ItemContent>
+                            </MudTimelineItem>
+                        }
+                    </MudTimeline>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Giving History">
+                    <MudTable Items="@_givingHistory" Dense="true" Hover="true">
+                        <HeaderContent>
+                            <MudTh>Date</MudTh>
+                            <MudTh>Amount</MudTh>
+                            <MudTh>Purpose</MudTh>
+                            <MudTh>Method</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Date">@context.Date.ToShortDateString()</MudTd>
+                            <MudTd DataLabel="Amount">$@context.Amount.ToString("N2")</MudTd>
+                            <MudTd DataLabel="Purpose">@context.Purpose</MudTd>
+                            <MudTd DataLabel="Method">@context.PaymentMethod</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudTabPanel>
+            </MudTabs>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private MudForm _form = null!;
+    private bool _success;
+    
+    private ProfileModel _profile = new()
+    {
+        FullName = "John Doe",
+        Organization = "UMYF",
+        Email = "john.doe@example.com",
+        Phone = "+1234567890"
+    };
+
+    private List<ChurchHistoryModel> _churchHistory = new()
+    {
+        new ChurchHistoryModel { Title = "Joined Church", Description = "Initial membership", Date = DateTime.Now.AddYears(-2) },
+        new ChurchHistoryModel { Title = "Baptism", Description = "Baptized by Rev. Smith", Date = DateTime.Now.AddYears(-1) },
+        new ChurchHistoryModel { Title = "UMYF Leadership", Description = "Elected as UMYF Secretary", Date = DateTime.Now.AddMonths(-6) }
+    };
+
+    private List<GivingHistoryModel> _givingHistory = new()
+    {
+        new GivingHistoryModel { Date = DateTime.Now.AddMonths(-1), Amount = 100.00m, Purpose = "Tithe", PaymentMethod = "EcoCash" },
+        new GivingHistoryModel { Date = DateTime.Now.AddMonths(-2), Amount = 50.00m, Purpose = "Building Fund", PaymentMethod = "OneMoney" },
+        new GivingHistoryModel { Date = DateTime.Now.AddMonths(-3), Amount = 75.00m, Purpose = "Mission Fund", PaymentMethod = "PayNow" }
+    };
+
+    private async Task SaveProfile()
+    {
+        await _form.Validate();
+        
+        if (_success)
+        {
+            // TODO: Save profile changes to the API
+            Snackbar.Add("Profile updated successfully", Severity.Success);
+        }
+    }
+
+    public class ProfileModel
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Organization { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+    }
+
+    public class ChurchHistoryModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public DateTime Date { get; set; }
+    }
+
+    public class GivingHistoryModel
+    {
+        public DateTime Date { get; set; }
+        public decimal Amount { get; set; }
+        public string Purpose { get; set; } = string.Empty;
+        public string PaymentMethod { get; set; } = string.Empty;
+    }
+} 

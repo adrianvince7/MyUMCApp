@@ -1,0 +1,261 @@
+@page "/store"
+@attribute [Authorize]
+@inject ISnackbar Snackbar
+
+<PageTitle>Store - United Methodist Church</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+    <MudGrid>
+        <MudItem xs="12" md="9">
+            <MudText Typo="Typo.h4" Class="mb-4">Church Store</MudText>
+            
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudPaper Class="pa-4" Elevation="0">
+                        <MudGrid>
+                            <MudItem xs="12" sm="4">
+                                <MudSelect T="string" Label="Category" @bind-Value="_selectedCategory">
+                                    <MudSelectItem Value="@("all")">All Categories</MudSelectItem>
+                                    @foreach (var category in _categories)
+                                    {
+                                        <MudSelectItem Value="@category">@category</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="4">
+                                <MudSelect T="string" Label="Sort By" @bind-Value="_sortBy">
+                                    <MudSelectItem Value="@("newest")">Newest First</MudSelectItem>
+                                    <MudSelectItem Value="@("price_asc")">Price: Low to High</MudSelectItem>
+                                    <MudSelectItem Value="@("price_desc")">Price: High to Low</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="4">
+                                <MudTextField @bind-Value="_searchText" 
+                                            Label="Search" 
+                                            Adornment="Adornment.Start"
+                                            AdornmentIcon="@Icons.Material.Filled.Search"/>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+
+                @foreach (var product in FilteredProducts)
+                {
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCard Elevation="2" Class="rounded-lg">
+                            <MudCardMedia Image="@product.ImageUrl" Height="200" />
+                            <MudCardContent>
+                                <MudText Typo="Typo.h6">@product.Name</MudText>
+                                <MudText Typo="Typo.body2">@product.Description</MudText>
+                                <MudText Typo="Typo.h6" Color="Color.Primary" Class="mt-2">
+                                    $@product.Price.ToString("N2")
+                                </MudText>
+                                @if (product.Stock > 0)
+                                {
+                                    <MudChip Color="Color.Success" Size="Size.Small">In Stock</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip Color="Color.Error" Size="Size.Small">Out of Stock</MudChip>
+                                }
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Primary"
+                                          OnClick="@(() => AddToCart(product))"
+                                          Disabled="@(product.Stock == 0)">
+                                    Add to Cart
+                                </MudButton>
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Secondary"
+                                          OnClick="@(() => ShowProductDetails(product))">
+                                    Details
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudItem>
+
+        <MudItem xs="12" md="3">
+            <MudCard Elevation="3" Class="rounded-lg">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Shopping Cart</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudBadge Content="@(_cartItems.Count)" Color="Color.Primary" Overlap="true">
+                            <MudIconButton Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Default" />
+                        </MudBadge>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Style="max-height: 400px; overflow-y: auto;">
+                    @if (_cartItems.Any())
+                    {
+                        @foreach (var item in _cartItems)
+                        {
+                            <MudPaper Class="pa-4 mb-2" Elevation="0">
+                                <MudText Typo="Typo.subtitle2">@item.Product.Name</MudText>
+                                <MudText Typo="Typo.caption">$@item.Product.Price.ToString("N2") x @item.Quantity</MudText>
+                                <MudButtonGroup Size="Size.Small" Class="mt-2">
+                                    <MudButton OnClick="@(() => UpdateQuantity(item, -1))">-</MudButton>
+                                    <MudButton Disabled>@item.Quantity</MudButton>
+                                    <MudButton OnClick="@(() => UpdateQuantity(item, 1))">+</MudButton>
+                                </MudButtonGroup>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                             Size="Size.Small"
+                                             OnClick="@(() => RemoveFromCart(item))"
+                                             Class="float-right"/>
+                            </MudPaper>
+                        }
+                        <MudDivider Class="my-4"/>
+                        <MudText Typo="Typo.h6" Align="Align.Right">
+                            Total: $@(_cartItems.Sum(i => i.Product.Price * i.Quantity).ToString("N2"))
+                        </MudText>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  FullWidth="true"
+                                  OnClick="Checkout"
+                                  Class="mt-4">
+                            Checkout
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudText Align="Align.Center">Your cart is empty</MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _selectedCategory = "all";
+    private string _sortBy = "newest";
+    private string _searchText = string.Empty;
+    private List<string> _categories = new() { "Books", "Clothing", "Music", "Accessories" };
+    private List<Product> _products = new();
+    private List<CartItem> _cartItems = new();
+
+    protected override void OnInitialized()
+    {
+        // Sample data - replace with API call
+        _products = new List<Product>
+        {
+            new Product
+            {
+                Id = 1,
+                Name = "UMC T-Shirt",
+                Description = "Comfortable cotton t-shirt with UMC logo",
+                Price = 19.99m,
+                Category = "Clothing",
+                ImageUrl = "images/tshirt.jpg",
+                Stock = 50
+            },
+            new Product
+            {
+                Id = 2,
+                Name = "Hymnal Book",
+                Description = "Traditional UMC hymnal book",
+                Price = 24.99m,
+                Category = "Books",
+                ImageUrl = "images/hymnal.jpg",
+                Stock = 100
+            },
+            new Product
+            {
+                Id = 3,
+                Name = "Cross Necklace",
+                Description = "Sterling silver cross necklace",
+                Price = 39.99m,
+                Category = "Accessories",
+                ImageUrl = "images/necklace.jpg",
+                Stock = 25
+            }
+        };
+    }
+
+    private IEnumerable<Product> FilteredProducts
+    {
+        get
+        {
+            var query = _products.AsEnumerable();
+
+            if (_selectedCategory != "all")
+                query = query.Where(p => p.Category == _selectedCategory);
+
+            if (!string.IsNullOrWhiteSpace(_searchText))
+                query = query.Where(p => p.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+                                       p.Description.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+            query = _sortBy switch
+            {
+                "price_asc" => query.OrderBy(p => p.Price),
+                "price_desc" => query.OrderByDescending(p => p.Price),
+                _ => query.OrderByDescending(p => p.Id) // newest
+            };
+
+            return query;
+        }
+    }
+
+    private void AddToCart(Product product)
+    {
+        var existingItem = _cartItems.FirstOrDefault(i => i.Product.Id == product.Id);
+        if (existingItem != null)
+        {
+            UpdateQuantity(existingItem, 1);
+        }
+        else
+        {
+            _cartItems.Add(new CartItem { Product = product, Quantity = 1 });
+        }
+        Snackbar.Add($"{product.Name} added to cart", Severity.Success);
+    }
+
+    private void UpdateQuantity(CartItem item, int change)
+    {
+        var newQuantity = item.Quantity + change;
+        if (newQuantity > 0 && newQuantity <= item.Product.Stock)
+        {
+            item.Quantity = newQuantity;
+        }
+    }
+
+    private void RemoveFromCart(CartItem item)
+    {
+        _cartItems.Remove(item);
+        Snackbar.Add($"{item.Product.Name} removed from cart", Severity.Info);
+    }
+
+    private void ShowProductDetails(Product product)
+    {
+        // TODO: Implement product details dialog
+    }
+
+    private async Task Checkout()
+    {
+        // TODO: Implement checkout process with payment integration
+        await Task.Delay(1000); // Simulate API call
+        Snackbar.Add("Proceeding to checkout...", Severity.Info);
+    }
+
+    public class Product
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+        public int Stock { get; set; }
+    }
+
+    public class CartItem
+    {
+        public Product Product { get; set; } = null!;
+        public int Quantity { get; set; }
+    }
+} 

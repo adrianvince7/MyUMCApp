@@ -1,0 +1,192 @@
+@page "/sermons"
+@attribute [Authorize]
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Sermons - United Methodist Church</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            @if (_selectedSermon != null)
+            {
+                <MudPaper Class="pa-4 mb-4" Elevation="3">
+                    <div class="video-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                        <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                                src="@_selectedSermon.VideoUrl"
+                                title="@_selectedSermon.Title"
+                                frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen>
+                        </iframe>
+                    </div>
+                    <MudText Typo="Typo.h5" Class="mt-4">@_selectedSermon.Title</MudText>
+                    <MudText Typo="Typo.subtitle1">@_selectedSermon.Preacher</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">@_selectedSermon.Description</MudText>
+                    <MudDivider Class="my-4"/>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudButton StartIcon="@Icons.Material.Filled.Download"
+                                      Color="Color.Primary"
+                                      Variant="Variant.Outlined"
+                                      OnClick="@(() => DownloadSermon(_selectedSermon))">
+                                Download Audio
+                            </MudButton>
+                        </MudItem>
+                        <MudItem xs="12" sm="6" Class="d-flex justify-end">
+                            <MudRating @bind-Value="_selectedSermon.Rating" ReadOnly="false" />
+                        </MudItem>
+                    </MudGrid>
+                    <MudExpansionPanels Class="mt-4">
+                        <MudExpansionPanel Text="Comments">
+                            <MudTextField T="string" 
+                                        @bind-Value="_newComment"
+                                        Label="Add a comment"
+                                        Variant="Variant.Outlined"
+                                        Lines="3"/>
+                            <MudButton Color="Color.Primary"
+                                      Variant="Variant.Filled"
+                                      OnClick="AddComment"
+                                      Class="mt-2">
+                                Post Comment
+                            </MudButton>
+                            <MudDivider Class="my-4"/>
+                            @foreach (var comment in _selectedSermon.Comments)
+                            {
+                                <MudPaper Class="pa-3 mb-2" Elevation="0">
+                                    <MudText Typo="Typo.body1">@comment.Text</MudText>
+                                    <MudText Typo="Typo.caption">
+                                        By @comment.Author on @comment.Date.ToString("g")
+                                    </MudText>
+                                </MudPaper>
+                            }
+                        </MudExpansionPanel>
+                    </MudExpansionPanels>
+                </MudPaper>
+            }
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Recent Sermons</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Style="max-height: 600px; overflow-y: auto;">
+                    @foreach (var sermon in _sermons)
+                    {
+                        <MudPaper Class="pa-4 mb-2" 
+                                 Elevation="0" 
+                                 Style="cursor: pointer;"
+                                 @onclick="@(() => SelectSermon(sermon))">
+                            <MudText Typo="Typo.subtitle1" Color="Color.Primary">@sermon.Title</MudText>
+                            <MudText Typo="Typo.caption">@sermon.Preacher</MudText>
+                            <MudText Typo="Typo.caption">@sermon.Date.ToString("D")</MudText>
+                            <MudChip Size="Size.Small" 
+                                    Color="Color.Primary" 
+                                    Class="mt-1">
+                                @sermon.Duration minutes
+                            </MudChip>
+                        </MudPaper>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<Sermon> _sermons = new();
+    private Sermon? _selectedSermon;
+    private string _newComment = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Sample data - replace with API call
+        _sermons = new List<Sermon>
+        {
+            new Sermon
+            {
+                Title = "Walking in Faith",
+                Preacher = "Rev. John Smith",
+                Description = "A powerful message about walking in faith during challenging times.",
+                Date = DateTime.Today.AddDays(-7),
+                Duration = 45,
+                VideoUrl = "https://www.youtube.com/embed/example1",
+                AudioUrl = "https://example.com/sermons/audio1.mp3",
+                Rating = 4,
+                Comments = new List<Comment>
+                {
+                    new Comment { Text = "Wonderful message!", Author = "Jane Doe", Date = DateTime.Now.AddHours(-2) }
+                }
+            },
+            new Sermon
+            {
+                Title = "The Power of Prayer",
+                Preacher = "Rev. Sarah Johnson",
+                Description = "Understanding the importance of prayer in our daily lives.",
+                Date = DateTime.Today.AddDays(-14),
+                Duration = 40,
+                VideoUrl = "https://www.youtube.com/embed/example2",
+                AudioUrl = "https://example.com/sermons/audio2.mp3",
+                Rating = 5,
+                Comments = new List<Comment>
+                {
+                    new Comment { Text = "Very inspiring!", Author = "John Doe", Date = DateTime.Now.AddDays(-1) }
+                }
+            }
+        };
+
+        _selectedSermon = _sermons.FirstOrDefault();
+    }
+
+    private void SelectSermon(Sermon sermon)
+    {
+        _selectedSermon = sermon;
+        _newComment = string.Empty;
+    }
+
+    private async Task DownloadSermon(Sermon sermon)
+    {
+        // TODO: Implement actual download functionality
+        await Task.Delay(1000); // Simulate download
+        Snackbar.Add("Download started", Severity.Success);
+    }
+
+    private void AddComment()
+    {
+        if (string.IsNullOrWhiteSpace(_newComment) || _selectedSermon == null)
+            return;
+
+        _selectedSermon.Comments.Insert(0, new Comment
+        {
+            Text = _newComment,
+            Author = "Current User", // Replace with actual user name
+            Date = DateTime.Now
+        });
+
+        _newComment = string.Empty;
+        Snackbar.Add("Comment added successfully", Severity.Success);
+    }
+
+    public class Sermon
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Preacher { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public DateTime Date { get; set; }
+        public int Duration { get; set; }
+        public string VideoUrl { get; set; } = string.Empty;
+        public string AudioUrl { get; set; } = string.Empty;
+        public int Rating { get; set; }
+        public List<Comment> Comments { get; set; } = new();
+    }
+
+    public class Comment
+    {
+        public string Text { get; set; } = string.Empty;
+        public string Author { get; set; } = string.Empty;
+        public DateTime Date { get; set; }
+    }
+} 

@@ -1,0 +1,157 @@
+@page "/events"
+@attribute [Authorize]
+@inject ISnackbar Snackbar
+
+<PageTitle>Events - United Methodist Church</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+    <MudGrid>
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-4" Elevation="3">
+                <MudCalendar @bind-SelectedDate="@_selectedDate" 
+                            Events="@_events"
+                            EventClick="@EventClick"
+                            Class="rounded-lg" />
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="3" Class="rounded-lg">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Upcoming Events</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="@(() => OpenEventDialog())" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Style="max-height: 400px; overflow-y: auto;">
+                    @foreach (var evt in _upcomingEvents)
+                    {
+                        <MudPaper Class="pa-4 mb-2" Elevation="0">
+                            <MudText Typo="Typo.subtitle1" Color="Color.Primary">@evt.Title</MudText>
+                            <MudText Typo="Typo.body2">@evt.Description</MudText>
+                            <MudText Typo="Typo.caption">@evt.Start.ToString("g") - @evt.End.ToString("t")</MudText>
+                            <MudText Typo="Typo.caption">Location: @evt.Location</MudText>
+                            <MudChip Color="@GetEventStatusColor(evt)" Size="Size.Small" Class="mt-2">
+                                @evt.Status
+                            </MudChip>
+                            @if (evt.Status == "Open")
+                            {
+                                <MudButton Color="Color.Primary" 
+                                          Variant="Variant.Text" 
+                                          Size="Size.Small"
+                                          OnClick="@(() => RegisterForEvent(evt))"
+                                          Class="mt-2">
+                                    Register
+                                </MudButton>
+                            }
+                        </MudPaper>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private DateTime _selectedDate = DateTime.Today;
+    private List<ChurchEvent> _events = new();
+    private List<ChurchEvent> _upcomingEvents = new();
+
+    protected override void OnInitialized()
+    {
+        // Sample data - replace with API call
+        _events = new List<ChurchEvent>
+        {
+            new ChurchEvent 
+            { 
+                Title = "Sunday Service",
+                Description = "Regular Sunday worship service",
+                Start = DateTime.Today.AddDays(3).AddHours(9),
+                End = DateTime.Today.AddDays(3).AddHours(11),
+                Location = "Main Sanctuary",
+                Status = "Open"
+            },
+            new ChurchEvent 
+            { 
+                Title = "Youth Meeting",
+                Description = "UMYF weekly meeting",
+                Start = DateTime.Today.AddDays(5).AddHours(14),
+                End = DateTime.Today.AddDays(5).AddHours(16),
+                Location = "Youth Hall",
+                Status = "Open"
+            },
+            new ChurchEvent 
+            { 
+                Title = "Bible Study",
+                Description = "Weekly Bible study session",
+                Start = DateTime.Today.AddDays(7).AddHours(18),
+                End = DateTime.Today.AddDays(7).AddHours(19.5),
+                Location = "Fellowship Hall",
+                Status = "Open"
+            }
+        };
+
+        _upcomingEvents = _events.Where(e => e.Start > DateTime.Now)
+                                .OrderBy(e => e.Start)
+                                .ToList();
+    }
+
+    private void EventClick(CalendarEvent calendarEvent)
+    {
+        var churchEvent = _events.FirstOrDefault(e => e.Title == calendarEvent.Text);
+        if (churchEvent != null)
+        {
+            // Show event details dialog
+            var parameters = new DialogParameters
+            {
+                { "Event", churchEvent }
+            };
+            // TODO: Implement event details dialog
+        }
+    }
+
+    private Color GetEventStatusColor(ChurchEvent evt)
+    {
+        return evt.Status switch
+        {
+            "Open" => Color.Success,
+            "Full" => Color.Warning,
+            "Closed" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private async Task RegisterForEvent(ChurchEvent evt)
+    {
+        // TODO: Implement event registration
+        await Task.Delay(1000); // Simulate API call
+        Snackbar.Add($"Successfully registered for {evt.Title}", Severity.Success);
+    }
+
+    private void OpenEventDialog()
+    {
+        // TODO: Implement event creation dialog for admins
+    }
+
+    public class ChurchEvent
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public string Location { get; set; } = string.Empty;
+        public string Status { get; set; } = "Open";
+
+        public CalendarEvent ToCalendarEvent()
+        {
+            return new CalendarEvent
+            {
+                Text = Title,
+                Start = Start,
+                End = End
+            };
+        }
+    }
+} 

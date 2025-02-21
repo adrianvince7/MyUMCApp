@@ -1,0 +1,79 @@
+@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+
+<PageTitle>United Methodist Church - Welcome</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudText Typo="Typo.h3" Align="Align.Center" Class="mb-8">Welcome to United Methodist Church</MudText>
+    
+    <AuthorizeView>
+        <Authorized>
+            <MudGrid>
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="3" Class="rounded-lg">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Upcoming Events</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudIconButton Icon="@Icons.Material.Filled.Event" Color="Color.Default" />
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText>View and register for upcoming church events.</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/events">View Events</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="3" Class="rounded-lg">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Latest Sermons</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudIconButton Icon="@Icons.Material.Filled.VideoLibrary" Color="Color.Default" />
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText>Watch or listen to our latest sermons.</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/sermons">Watch Now</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="4">
+                    <MudCard Elevation="3" Class="rounded-lg">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Church Store</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudIconButton Icon="@Icons.Material.Filled.Store" Color="Color.Default" />
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText>Browse and purchase church merchandise.</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/store">Shop Now</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </Authorized>
+        <NotAuthorized>
+            <MudPaper Class="pa-4" Elevation="3">
+                <MudText Typo="Typo.h5" Class="mb-4">Join Our Community</MudText>
+                <MudText Class="mb-4">Welcome to the United Methodist Church app. Please sign in or register to access all features.</MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="authentication/register" Class="mr-2">Register</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="authentication/login">Sign In</MudButton>
+            </MudPaper>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudContainer> 

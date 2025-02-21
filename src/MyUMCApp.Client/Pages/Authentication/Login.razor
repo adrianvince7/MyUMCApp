@@ -1,0 +1,33 @@
+@page "/authentication/login"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+<PageTitle>Login - United Methodist Church</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <MudCard Elevation="3" Class="rounded-lg">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Align="Align.Center">Sign In</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudText Align="Align.Center" Class="mb-4">Sign in with your Microsoft account</MudText>
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       FullWidth="true"
+                       OnClick="SignIn"
+                       StartIcon="@Icons.Material.Filled.Login">
+                Sign In
+            </MudButton>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    private void SignIn()
+    {
+        Navigation.NavigateToLogin("authentication/login-callback");
+    }
+} 

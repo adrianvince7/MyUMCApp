@@ -1,0 +1,191 @@
+@using MyUMCApp.Shared.Models
+@using MyUMCApp.Client.Services
+@inject IEventService EventService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">@Event.Title</MudText>
+                    <MudText Typo="Typo.subtitle2">@Event.Description</MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudChip Color="@GetEventStatusColor(Event)" Size="Size.Small">
+                        @Event.Status
+                    </MudChip>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.Schedule" Class="mr-2" />
+                            @Event.StartDate.ToString("g") - @Event.EndDate.ToString("t")
+                        </MudText>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        @if (Event.IsVirtual)
+                        {
+                            <MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.VideoCall" Class="mr-2" />
+                                Virtual Meeting: <MudLink Href="@Event.VirtualMeetingUrl" Target="_blank">Join Meeting</MudLink>
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.LocationOn" Class="mr-2" />
+                                @Event.Location
+                            </MudText>
+                        }
+                    </MudItem>
+
+                    @if (Event.RequiresRegistration)
+                    {
+                        <MudItem xs="12">
+                            <MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.Group" Class="mr-2" />
+                                Attendees: @Event.Registrations.Count / @Event.MaxAttendees
+                            </MudText>
+                            <MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.Timer" Class="mr-2" />
+                                Registration Deadline: @Event.RegistrationDeadline?.ToString("g")
+                            </MudText>
+                        </MudItem>
+                    }
+
+                    @if (Event.IsRecurring)
+                    {
+                        <MudItem xs="12">
+                            <MudText>
+                                <MudIcon Icon="@Icons.Material.Filled.Repeat" Class="mr-2" />
+                                Recurring: @GetRecurrenceText(Event.RecurrencePattern)
+                            </MudText>
+                        </MudItem>
+                    }
+
+                    @if (Event.Status == EventStatus.Published && Event.RequiresRegistration)
+                    {
+                        <MudItem xs="12" Class="mt-4">
+                            @if (_isRegistered)
+                            {
+                                <MudButton Color="Color.Error"
+                                          Variant="Variant.Filled"
+                                          OnClick="CancelRegistration"
+                                          Disabled="@_isProcessing">
+                                    Cancel Registration
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <MudButton Color="Color.Primary"
+                                          Variant="Variant.Filled"
+                                          OnClick="Register"
+                                          Disabled="@(_isProcessing || Event.Registrations.Count >= Event.MaxAttendees)">
+                                    Register
+                                </MudButton>
+                            }
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public ChurchEvent Event { get; set; } = null!;
+
+    private bool _isRegistered;
+    private bool _isProcessing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _isRegistered = await EventService.IsRegisteredForEventAsync(Event.Id);
+        }
+        catch (Exception)
+        {
+            // Handle error
+        }
+    }
+
+    private Color GetEventStatusColor(ChurchEvent evt)
+    {
+        return evt.Status switch
+        {
+            EventStatus.Draft => Color.Default,
+            EventStatus.Published => Color.Success,
+            EventStatus.Cancelled => Color.Error,
+            EventStatus.Completed => Color.Info,
+            _ => Color.Default
+        };
+    }
+
+    private string GetRecurrenceText(RecurrencePattern pattern)
+    {
+        var text = pattern.Type switch
+        {
+            RecurrenceType.Daily => $"Every {pattern.Interval} day(s)",
+            RecurrenceType.Weekly => $"Every {pattern.Interval} week(s)",
+            RecurrenceType.Monthly => $"Every {pattern.Interval} month(s)",
+            RecurrenceType.Yearly => $"Every {pattern.Interval} year(s)",
+            _ => string.Empty
+        };
+
+        if (pattern.EndDate.HasValue)
+        {
+            text += $" until {pattern.EndDate.Value:d}";
+        }
+
+        return text;
+    }
+
+    private async Task Register()
+    {
+        try
+        {
+            _isProcessing = true;
+            await EventService.RegisterForEventAsync(Event.Id);
+            _isRegistered = true;
+            Snackbar.Add("Successfully registered for event", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to register for event", Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task CancelRegistration()
+    {
+        try
+        {
+            _isProcessing = true;
+            await EventService.CancelRegistrationAsync(Event.Id);
+            _isRegistered = false;
+            Snackbar.Add("Successfully cancelled registration", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to cancel registration", Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private void Close() => MudDialog.Close();
+} 

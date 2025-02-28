@@ -1,116 +1,190 @@
 @page "/admin/dashboard"
-@using MyUMCApp.Client.Auth
-@attribute [Authorize(Policy = AuthorizationPolicies.RequireAdmin)]
+@attribute [Authorize(Roles = "Administrator,Developer")]
 
-<div class="admin-dashboard">
-    <h1>Admin Dashboard</h1>
+<PageTitle>Admin Dashboard - United Methodist Church</PageTitle>
 
-    <div class="dashboard-stats">
-        <div class="stat-card">
-            <h3>Total Members</h3>
-            <p class="stat-value">@_totalMembers</p>
-        </div>
-        <div class="stat-card">
-            <h3>Active Members</h3>
-            <p class="stat-value">@_activeMembers</p>
-        </div>
-        <div class="stat-card">
-            <h3>Recent Events</h3>
-            <p class="stat-value">@_recentEvents</p>
-        </div>
-        <div class="stat-card">
-            <h3>New Registrations</h3>
-            <p class="stat-value">@_newRegistrations</p>
-        </div>
-    </div>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+    <MudText Typo="Typo.h4" Class="mb-4">Admin Dashboard</MudText>
 
-    <div class="dashboard-actions">
-        <button class="btn btn-primary" @onclick="HandleManageUsers">
-            Manage Users
-        </button>
-        <button class="btn btn-primary" @onclick="HandleManageEvents">
-            Manage Events
-        </button>
-        <button class="btn btn-primary" @onclick="HandleManageContent">
-            Manage Content
-        </button>
-        <button class="btn btn-primary" @onclick="HandleManageStore">
-            Manage Store
-        </button>
-    </div>
-</div>
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="d-flex flex-column pa-4" Style="height: 150px;">
+                <MudText Typo="Typo.subtitle1">Total Members</MudText>
+                <MudText Typo="Typo.h3" Class="flex-grow-1 d-flex align-center">256</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/admin/members">View Details</MudButton>
+            </MudPaper>
+        </MudItem>
 
-<style>
-    .admin-dashboard {
-        padding: 2rem;
-    }
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="d-flex flex-column pa-4" Style="height: 150px;">
+                <MudText Typo="Typo.subtitle1">Active Events</MudText>
+                <MudText Typo="Typo.h3" Class="flex-grow-1 d-flex align-center">12</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/admin/events">Manage Events</MudButton>
+            </MudPaper>
+        </MudItem>
 
-    .dashboard-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-    }
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="d-flex flex-column pa-4" Style="height: 150px;">
+                <MudText Typo="Typo.subtitle1">Store Products</MudText>
+                <MudText Typo="Typo.h3" Class="flex-grow-1 d-flex align-center">45</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/admin/store">Manage Store</MudButton>
+            </MudPaper>
+        </MudItem>
 
-    .stat-card {
-        background-color: white;
-        padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="d-flex flex-column pa-4" Style="height: 150px;">
+                <MudText Typo="Typo.subtitle1">Total Sermons</MudText>
+                <MudText Typo="Typo.h3" Class="flex-grow-1 d-flex align-center">89</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/admin/sermons">Manage Sermons</MudButton>
+            </MudPaper>
+        </MudItem>
 
-    .stat-card h3 {
-        color: #6a1b9a;
-        margin: 0 0 0.5rem 0;
-        font-size: 1.1rem;
-    }
+        <MudItem xs="12" md="6">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Recent Announcements</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="@(() => OpenAnnouncementDialog())">
+                            Add New
+                        </MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudList Clickable="true">
+                        @foreach (var announcement in _recentAnnouncements)
+                        {
+                            <MudListItem>
+                                <div class="d-flex">
+                                    <div class="flex-grow-1">
+                                        <MudText Typo="Typo.body1">@announcement.Title</MudText>
+                                        <MudText Typo="Typo.caption">@announcement.Date.ToString("g")</MudText>
+                                    </div>
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                                        <MudMenuItem OnClick="@(() => EditAnnouncement(announcement))">Edit</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => DeleteAnnouncement(announcement))">Delete</MudMenuItem>
+                                    </MudMenu>
+                                </div>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
 
-    .stat-value {
-        font-size: 2rem;
-        font-weight: bold;
-        margin: 0;
-        color: #7b1fa2;
-    }
-
-    .dashboard-actions {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-top: 2rem;
-    }
-
-    .btn-primary {
-        background-color: #7b1fa2;
-        border-color: #7b1fa2;
-        padding: 0.75rem;
-        font-size: 1rem;
-    }
-
-    .btn-primary:hover {
-        background-color: #6a1b9a;
-        border-color: #6a1b9a;
-    }
-</style>
+        <MudItem xs="12" md="6">
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Content Management</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="6">
+                            <MudPaper Class="pa-4" Elevation="0">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2">Blog Posts</MudText>
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Primary" 
+                                          FullWidth="true"
+                                          Href="/admin/blog">
+                                    Manage Blog
+                                </MudButton>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudPaper Class="pa-4" Elevation="0">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2">Media Library</MudText>
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Primary" 
+                                          FullWidth="true"
+                                          Href="/admin/media">
+                                    Manage Media
+                                </MudButton>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudPaper Class="pa-4" Elevation="0">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2">Calendar</MudText>
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Primary" 
+                                          FullWidth="true"
+                                          Href="/admin/calendar">
+                                    Manage Calendar
+                                </MudButton>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudPaper Class="pa-4" Elevation="0">
+                                <MudText Typo="Typo.subtitle1" Class="mb-2">Settings</MudText>
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Primary" 
+                                          FullWidth="true"
+                                          Href="/admin/settings">
+                                    Manage Settings
+                                </MudButton>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
 
 @code {
-    private int _totalMembers;
-    private int _activeMembers;
-    private int _recentEvents;
-    private int _newRegistrations;
+    private List<Announcement> _recentAnnouncements = new();
 
-    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        // TODO: Fetch actual statistics from the backend
-        _totalMembers = 150;
-        _activeMembers = 120;
-        _recentEvents = 5;
-        _newRegistrations = 10;
+        // Sample data - replace with API call
+        _recentAnnouncements = new List<Announcement>
+        {
+            new Announcement 
+            { 
+                Id = 1, 
+                Title = "Sunday Service Time Change", 
+                Content = "Service time will change to 9:00 AM starting next week.",
+                Date = DateTime.Now.AddDays(-1)
+            },
+            new Announcement 
+            { 
+                Id = 2, 
+                Title = "Youth Camp Registration", 
+                Content = "Registration for summer youth camp is now open.",
+                Date = DateTime.Now.AddDays(-2)
+            },
+            new Announcement 
+            { 
+                Id = 3, 
+                Title = "Church Cleanup Day", 
+                Content = "Join us for our monthly church cleanup day.",
+                Date = DateTime.Now.AddDays(-3)
+            }
+        };
     }
 
-    private void HandleManageUsers() => NavigationManager.NavigateTo("/admin/users");
-    private void HandleManageEvents() => NavigationManager.NavigateTo("/admin/events");
-    private void HandleManageContent() => NavigationManager.NavigateTo("/admin/content");
-    private void HandleManageStore() => NavigationManager.NavigateTo("/admin/store");
+    private void OpenAnnouncementDialog()
+    {
+        // TODO: Implement announcement dialog
+    }
+
+    private void EditAnnouncement(Announcement announcement)
+    {
+        // TODO: Implement edit functionality
+    }
+
+    private void DeleteAnnouncement(Announcement announcement)
+    {
+        // TODO: Implement delete functionality
+    }
+
+    public class Announcement
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public DateTime Date { get; set; }
+    }
 } 

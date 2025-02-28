@@ -36,7 +36,6 @@ public class BlogPost : Content
     public string FeaturedImageUrl { get; set; } = string.Empty;
     public int ReadTime { get; set; }
     public int Views { get; set; }
-    public int Likes { get; set; }
     public List<BlogPostLike> Likes { get; set; } = new();
 }
 

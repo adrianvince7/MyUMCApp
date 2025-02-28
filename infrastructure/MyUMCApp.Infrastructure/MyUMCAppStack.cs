@@ -11,6 +11,9 @@ using Amazon.CDK.AWS.SNS;
 using Amazon.CDK.AWS.SQS;
 using Constructs;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.JavaScript;
+using Amazon.CDK.AWS.SNS.Subscriptions;
+using Function = Amazon.CDK.AWS.Lambda.Function;
 
 namespace MyUMCApp.Infrastructure;
 
@@ -58,8 +61,8 @@ public class MyUMCAppStack : Stack
         var database = new DatabaseInstance(this, "MyUMCAppDatabase", new DatabaseInstanceProps
         {
             Engine = DatabaseInstanceEngine.MYSQL,
-            InstanceType = InstanceType.T2_MICRO, // Free tier eligible
-            Vpc = vpc,
+            InstanceType = Amazon.CDK.AWS.EC2.InstanceType.T2_MICRO, // Free tier eligible
+            Vpc = null,
             AllocatedStorage = 20,
             MaxAllocatedStorage = 20,
             PubliclyAccessible = false
@@ -75,6 +78,18 @@ public class MyUMCAppStack : Stack
         });
 
         // CloudFront Distribution
+        Function? imageOptimizer;
+        imageOptimizer = new Function(this, "ImageOptimizer", new Amazon.CDK.AWS.Lambda.FunctionProps        {
+            Runtime = Runtime.NODEJS_18_X,
+            Handler = "index.handler",
+            Code = Code.FromAsset("lambda/image-optimizer"),
+            MemorySize = 1024,
+            Timeout = Duration.Seconds(5),
+            Environment = new Dictionary<string, string>
+            {
+                { "NODE_ENV", "production" }
+            }
+        });
         var distribution = new Distribution(this, "MyUMCAppDistribution", new DistributionProps
         {
             DefaultBehavior = new BehaviorOptions
@@ -93,7 +108,7 @@ public class MyUMCAppStack : Stack
                     QueryStringBehavior = CacheQueryStringBehavior.None()
                 })
             },
-            AdditionalBehaviors = new Dictionary<string, BehaviorOptions>
+            AdditionalBehaviors = (IDictionary<string, IBehaviorOptions>) new Dictionary<string, BehaviorOptions>
             {
                 {
                     "profiles/*", new BehaviorOptions
@@ -109,7 +124,8 @@ public class MyUMCAppStack : Stack
                             MaxTtl = Duration.Days(365),
                             EnableAcceptEncodingGzip = true,
                             EnableAcceptEncodingBrotli = true,
-                            HeaderBehavior = CacheHeaderBehavior.AllowList(new[] { "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers" }),
+                            HeaderBehavior = CacheHeaderBehavior.AllowList(new[]
+                                { "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers" }),
                             QueryStringBehavior = CacheQueryStringBehavior.AllowList(new[] { "w", "h", "q" }),
                             CookieBehavior = CacheCookieBehavior.None()
                         }),
@@ -137,18 +153,6 @@ public class MyUMCAppStack : Stack
         });
 
         // Lambda@Edge for image optimization
-        var imageOptimizer = new Function(this, "ImageOptimizer", new FunctionProps
-        {
-            Runtime = Runtime.NODEJS_18_X,
-            Handler = "index.handler",
-            Code = Code.FromAsset("lambda/image-optimizer"),
-            MemorySize = 1024,
-            Timeout = Duration.Seconds(5),
-            Environment = new Dictionary<string, string>
-            {
-                { "NODE_ENV", "production" }
-            }
-        });
 
         // SNS Topics
         var eventsTopic = new Topic(this, "MyUMCAppEventsTopic", new TopicProps
@@ -181,4 +185,5 @@ public class MyUMCAppStack : Stack
         new CfnOutput(this, "UserPoolClientId", new CfnOutputProps { Value = userPoolClient.UserPoolClientId });
         new CfnOutput(this, "WebsiteBucketName", new CfnOutputProps { Value = websiteBucket.BucketName });
         new CfnOutput(this, "CloudFrontURL", new CfnOutputProps { Value = distribution.DistributionDomainName });
- 
+    }
+}

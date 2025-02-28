@@ -1,0 +1,173 @@
+@using MyUMCApp.Shared.Models
+@using MyUMCApp.Client.Services
+@using MudBlazor
+@inject IEventService EventService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudDialog>
+    <MudDialogContent>
+        <MudForm @ref="_form">
+            <MudTextField @bind-Value="_event.Title"
+                         Label="Title"
+                         Required="true"
+                         RequiredError="Title is required"
+                         MaxLength="200" />
+
+            <MudTextField @bind-Value="_event.Description"
+                         Label="Description"
+                         Lines="3"
+                         MaxLength="1000" />
+
+            <MudDatePicker @bind-Date="_event.StartDate"
+                          Label="Start Date"
+                          Required="true"
+                          RequiredError="Start date is required" />
+
+            <MudTimePicker @bind-Time="_startTime"
+                          Label="Start Time"
+                          Required="true"
+                          RequiredError="Start time is required" />
+
+            <MudDatePicker @bind-Date="_event.EndDate"
+                          Label="End Date"
+                          Required="true"
+                          RequiredError="End date is required" />
+
+            <MudTimePicker @bind-Time="_endTime"
+                          Label="End Time"
+                          Required="true"
+                          RequiredError="End time is required" />
+
+            <MudSwitch @bind-Checked="_event.IsVirtual"
+                      Label="Virtual Event"
+                      Color="Color.Primary" />
+
+            @if (_event.IsVirtual)
+            {
+                <MudTextField @bind-Value="_event.VirtualMeetingUrl"
+                             Label="Meeting URL"
+                             Required="true"
+                             RequiredError="Meeting URL is required for virtual events"
+                             MaxLength="500" />
+            }
+            else
+            {
+                <MudTextField @bind-Value="_event.Location"
+                             Label="Location"
+                             Required="true"
+                             RequiredError="Location is required for in-person events"
+                             MaxLength="500" />
+            }
+
+            <MudSwitch @bind-Checked="_event.RequiresRegistration"
+                      Label="Requires Registration"
+                      Color="Color.Primary" />
+
+            @if (_event.RequiresRegistration)
+            {
+                <MudNumericField @bind-Value="_event.MaxAttendees"
+                                Label="Maximum Attendees"
+                                Min="1"
+                                Required="true"
+                                RequiredError="Maximum attendees is required when registration is enabled" />
+
+                <MudDatePicker @bind-Date="_event.RegistrationDeadline"
+                              Label="Registration Deadline"
+                              Required="true"
+                              RequiredError="Registration deadline is required when registration is enabled" />
+            }
+
+            <MudSwitch @bind-Checked="_event.IsRecurring"
+                      Label="Recurring Event"
+                      Color="Color.Primary" />
+
+            @if (_event.IsRecurring)
+            {
+                <MudSelect @bind-Value="_event.RecurrencePattern.Type"
+                          Label="Recurrence Type"
+                          Required="true"
+                          RequiredError="Recurrence type is required for recurring events">
+                    @foreach (var type in Enum.GetValues<RecurrenceType>())
+                    {
+                        <MudSelectItem Value="@type">@type.ToString()</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudNumericField @bind-Value="_event.RecurrencePattern.Interval"
+                                Label="Interval"
+                                Min="1"
+                                Required="true"
+                                RequiredError="Interval is required for recurring events" />
+
+                <MudDatePicker @bind-Date="_event.RecurrencePattern.EndDate"
+                              Label="End Date"
+                              Required="true"
+                              RequiredError="End date is required for recurring events" />
+            }
+        </MudForm>
+    </MudDialogContent>
+    <MudDialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                  Disabled="@(!_isValid)" 
+                  OnClick="Submit">Create</MudButton>
+    </MudDialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
+
+    private MudForm _form = null!;
+    private bool _isValid;
+    private TimeSpan? _startTime;
+    private TimeSpan? _endTime;
+
+    private ChurchEvent _event = new()
+    {
+        Status = EventStatus.Draft,
+        StartDate = DateTime.Today,
+        EndDate = DateTime.Today,
+        RecurrencePattern = new RecurrencePattern()
+    };
+
+    protected override void OnInitialized()
+    {
+        _startTime = DateTime.Now.TimeOfDay;
+        _endTime = DateTime.Now.AddHours(1).TimeOfDay;
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task Submit()
+    {
+        await _form.Validate();
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        if (_startTime.HasValue)
+        {
+            _event.StartDate = _event.StartDate.Date.Add(_startTime.Value);
+        }
+
+        if (_endTime.HasValue)
+        {
+            _event.EndDate = _event.EndDate.Date.Add(_endTime.Value);
+        }
+
+        try
+        {
+            var createdEvent = await EventService.CreateEventAsync(_event);
+            MudDialog.Close(DialogResult.Ok(createdEvent));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Failed to create event", Severity.Error);
+        }
+    }
+} 

@@ -5,6 +5,7 @@ using Blazored.LocalStorage;
 using Fluxor;
 using MudBlazor.Services;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using MyUMCApp.Client.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -36,5 +37,11 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 // Add custom services
 builder.Services.AddScoped<IThemeService, ThemeService>();
 builder.Services.AddScoped<ILanguageService, LanguageService>();
+builder.Services.AddScoped<ITranslationService, TranslationService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IEventService, EventService>();
+
+// Add JavaScript file references
+builder.RootComponents.Add<HeadContent>("head::after");
 
 await builder.Build().RunAsync();

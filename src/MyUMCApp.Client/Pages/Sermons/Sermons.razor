@@ -1,3 +1,4 @@
+@using MudBlazor
 @page "/sermons"
 @attribute [Authorize]
 @inject ISnackbar Snackbar
@@ -34,13 +35,13 @@
                             </MudButton>
                         </MudItem>
                         <MudItem xs="12" sm="6" Class="d-flex justify-end">
-                            <MudRating @bind-Value="_selectedSermon.Rating" ReadOnly="false" />
+                            <MudRating @bind-value:event="oninput" @bind-value="_selectedSermon.Rating" ReadOnly="false" />
                         </MudItem>
                     </MudGrid>
                     <MudExpansionPanels Class="mt-4">
                         <MudExpansionPanel Text="Comments">
                             <MudTextField T="string" 
-                                        @bind-Value="_newComment"
+                                        @bind-value:event="oninput" @bind-value="_newComment"
                                         Label="Add a comment"
                                         Variant="Variant.Outlined"
                                         Lines="3"/>

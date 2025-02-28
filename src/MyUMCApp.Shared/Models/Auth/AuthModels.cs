@@ -45,9 +45,29 @@ public class RegisterRequest
 public class AuthResponse
 {
     public bool Successful { get; set; }
-    public string? Error { get; set; }
+    public string? Message { get; set; }
     public string? AccessToken { get; set; }
     public string? RefreshToken { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+
+    public AuthResponse(bool successful, string message)
+    {
+        Successful = successful;
+        Message = message;
+    }
+
+    public AuthResponse(bool successful, string message, string accessToken, string refreshToken, DateTime expiresAt)
+    {
+        Successful = successful;
+        Message = message;
+        AccessToken = accessToken;
+        RefreshToken = refreshToken;
+        ExpiresAt = expiresAt;
+    }
+
+    public AuthResponse()
+    {
+    }
 }
 
 public class RefreshTokenRequest
@@ -74,7 +94,7 @@ public class ResetPasswordRequest
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Confirmation code is required")]
-    public string ConfirmationCode { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "New password is required")]
     [MinLength(8, ErrorMessage = "Password must be at least 8 characters long")]

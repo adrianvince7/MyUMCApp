@@ -440,7 +440,7 @@
             }
             else
             {
-                _errorMessage = response.Error ?? "Failed to change password. Please try again.";
+                _errorMessage = response.Message ?? "Failed to change password. Please try again.";
             }
         }
         catch (Exception ex)

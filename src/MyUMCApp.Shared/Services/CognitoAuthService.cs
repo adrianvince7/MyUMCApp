@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using MyUMCApp.Shared.Data;
 using MyUMCApp.Shared.Models;
 using MyUMCApp.Shared.Models.Auth;
+using AWSForgotPasswordRequest = Amazon.CognitoIdentityProvider.Model.ForgotPasswordRequest;
+using AWSChangePasswordRequest = Amazon.CognitoIdentityProvider.Model.ChangePasswordRequest;
 
 namespace MyUMCApp.Shared.Services;
 
@@ -160,11 +162,11 @@ public class CognitoAuthService : IAuthService
         }
     }
 
-    public async Task<AuthResponse> ForgotPasswordAsync(ForgotPasswordRequest request)
+    public async Task<AuthResponse> ForgotPasswordAsync(MyUMCApp.Shared.Models.Auth.ForgotPasswordRequest request)
     {
         try
         {
-            var forgotRequest = new ForgotPasswordRequest
+            var forgotRequest = new Amazon.CognitoIdentityProvider.Model.ForgotPasswordRequest
             {
                 ClientId = _clientId,
                 Username = request.Email
@@ -212,13 +214,13 @@ public class CognitoAuthService : IAuthService
         }
     }
 
-    public async Task<AuthResponse> ChangePasswordAsync(string userId, ChangePasswordRequest request)
+    public async Task<AuthResponse> ChangePasswordAsync(string userId, MyUMCApp.Shared.Models.Auth.ChangePasswordRequest request)
     {
         try
         {
-            var changeRequest = new ChangePasswordRequest
+            var changeRequest = new Amazon.CognitoIdentityProvider.Model.ChangePasswordRequest
             {
-                PreviousPassword = request.OldPassword,
+                PreviousPassword = request.CurrentPassword,
                 ProposedPassword = request.NewPassword,
                 AccessToken = userId // This should be the actual access token
             };

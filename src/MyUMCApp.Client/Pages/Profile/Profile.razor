@@ -1,4 +1,5 @@
 @page "/profile"
+@using MudBlazor
 @attribute [Authorize]
 @inject ISnackbar Snackbar
 
@@ -14,14 +15,18 @@
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudForm @ref="_form" @bind-IsValid="@_success">
+                    <MudForm @ref="_form" @bind-Value="_success" @bind-Value:event="ValueChanged">
                         <MudTextField T="string" 
                                     Label="Full Name" 
                                     @bind-Value="_profile.FullName"
+                                    @bind-Value:event="ValueChanged"
                                     Required="true"
                                     RequiredError="Name is required"/>
                         
-                        <MudSelect T="string" Label="Organization" @bind-Value="_profile.Organization" Required="true">
+                        <MudSelect T="string" Label="Organization" 
+                                 @bind-Value="_profile.Organization"
+                                 @bind-Value:event="ValueChanged"
+                                 Required="true">
                             <MudSelectItem Value="@("UMYF")">UMYF</MudSelectItem>
                             <MudSelectItem Value="@("RRW")">RRW</MudSelectItem>
                             <MudSelectItem Value="@("MUMC")">MUMC</MudSelectItem>
@@ -31,6 +36,7 @@
                         <MudTextField T="string" 
                                     Label="Email" 
                                     @bind-Value="_profile.Email"
+                                    @bind-Value:event="ValueChanged"
                                     Required="true"
                                     RequiredError="Email is required"
                                     InputType="InputType.Email"/>
@@ -38,6 +44,7 @@
                         <MudTextField T="string" 
                                     Label="Phone" 
                                     @bind-Value="_profile.Phone"
+                                    @bind-Value:event="ValueChanged"
                                     Required="true"
                                     RequiredError="Phone is required"/>
                     </MudForm>

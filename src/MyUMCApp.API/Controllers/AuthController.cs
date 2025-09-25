@@ -31,11 +31,11 @@ public class AuthController : ControllerBase
         
         if (result.Success)
         {
-            _logger.LogInformation("User {Email} logged in successfully", request.Email);
+            _logger.LogInformation("User {Email} logged in successfully", SanitizeForLog(request.Email));
             return Ok(result);
         }
 
-        _logger.LogWarning("Failed login attempt for user {Email}", request.Email);
+        _logger.LogWarning("Failed login attempt for user {Email}", SanitizeForLog(request.Email));
         return Unauthorized(result);
     }
 
@@ -51,7 +51,7 @@ public class AuthController : ControllerBase
         
         if (result.Success)
         {
-            _logger.LogInformation("User {Email} registered successfully", request.Email);
+            _logger.LogInformation("User {Email} registered successfully", SanitizeForLog(request.Email));
             return Ok(result);
         }
 
@@ -164,5 +164,14 @@ public class AuthController : ControllerBase
             email = email,
             message = "Token is valid" 
         });
+    }
+
+    private static string SanitizeForLog(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return "[empty]";
+        
+        // Remove potential log injection characters
+        return input.Replace('\n', ' ').Replace('\r', ' ').Replace('\t', ' ').Trim();
     }
 }

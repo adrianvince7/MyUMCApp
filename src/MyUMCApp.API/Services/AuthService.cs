@@ -80,7 +80,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during login for user {Email}", request.Email);
+            _logger.LogError(ex, "Error during login for user {Email}", SanitizeForLog(request.Email));
             return new AuthResponse
             {
                 Success = false,
@@ -141,7 +141,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during registration for user {Email}", request.Email);
+            _logger.LogError(ex, "Error during registration for user {Email}", SanitizeForLog(request.Email));
             return new AuthResponse
             {
                 Success = false,
@@ -174,7 +174,7 @@ public class AuthService : IAuthService
 
             // In a real application, you would send an email here
             _logger.LogInformation("Password reset token generated for user {Email}: {Token}", 
-                request.Email, resetToken);
+                SanitizeForLog(request.Email), resetToken);
 
             return new AuthResponse
             {
@@ -184,7 +184,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during forgot password for user {Email}", request.Email);
+            _logger.LogError(ex, "Error during forgot password for user {Email}", SanitizeForLog(request.Email));
             return new AuthResponse
             {
                 Success = false,
@@ -234,7 +234,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during password reset for user {Email}", request.Email);
+            _logger.LogError(ex, "Error during password reset for user {Email}", SanitizeForLog(request.Email));
             return new AuthResponse
             {
                 Success = false,
@@ -388,5 +388,14 @@ public class AuthService : IAuthService
             LastLogin = user.LastLogin,
             IsActive = user.IsActive
         };
+    }
+
+    private static string SanitizeForLog(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return "[empty]";
+        
+        // Remove potential log injection characters
+        return input.Replace('\n', ' ').Replace('\r', ' ').Replace('\t', ' ').Trim();
     }
 }

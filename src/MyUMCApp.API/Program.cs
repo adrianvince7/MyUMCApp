@@ -67,6 +67,9 @@ builder.Services.AddAuthentication(options =>
 
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<IStoreService, StoreService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -122,6 +125,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // Enable serving static files (for profile pictures)
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();

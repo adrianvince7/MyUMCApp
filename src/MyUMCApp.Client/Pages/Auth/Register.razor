@@ -1,0 +1,226 @@
+@page "/register"
+@using MyUMCApp.Client.Models
+@using MyUMCApp.Client.Services
+@inject IApiAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<div class="auth-container">
+    <div class="auth-form">
+        <h2>Register</h2>
+        
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger">
+                @_errorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(_successMessage))
+        {
+            <div class="alert alert-success">
+                @_successMessage
+            </div>
+        }
+
+        <EditForm Model="@_registerRequest" OnValidSubmit="HandleRegisterAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="_registerRequest.Email" />
+                <ValidationMessage For="@(() => _registerRequest.Email)" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <InputText type="password" id="password" class="form-control" @bind-Value="_registerRequest.Password" />
+                <ValidationMessage For="@(() => _registerRequest.Password)" />
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <InputText type="password" id="confirmPassword" class="form-control" @bind-Value="_registerRequest.ConfirmPassword" />
+                <ValidationMessage For="@(() => _registerRequest.ConfirmPassword)" />
+            </div>
+
+            <div class="form-group">
+                <label for="firstName">First Name</label>
+                <InputText id="firstName" class="form-control" @bind-Value="_registerRequest.FirstName" />
+                <ValidationMessage For="@(() => _registerRequest.FirstName)" />
+            </div>
+
+            <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <InputText id="lastName" class="form-control" @bind-Value="_registerRequest.LastName" />
+                <ValidationMessage For="@(() => _registerRequest.LastName)" />
+            </div>
+
+            <div class="form-group">
+                <label for="organization">Organization (Optional)</label>
+                <InputText id="organization" class="form-control" @bind-Value="_registerRequest.Organization" />
+            </div>
+
+            <div class="form-group">
+                <label for="churchRole">Church Role (Optional)</label>
+                <InputSelect id="churchRole" class="form-control" @bind-Value="_registerRequest.ChurchRole">
+                    <option value="">Select Role</option>
+                    <option value="Member">Member</option>
+                    <option value="Visitor">Visitor</option>
+                    <option value="Youth">Youth</option>
+                    <option value="Leader">Leader</option>
+                    <option value="Pastor">Pastor</option>
+                    <option value="Deacon">Deacon</option>
+                    <option value="Elder">Elder</option>
+                </InputSelect>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary" disabled="@_isLoading">
+                    @if (_isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span>Creating Account...</span>
+                    }
+                    else
+                    {
+                        <span>Register</span>
+                    }
+                </button>
+            </div>
+
+            <div class="auth-links">
+                <a href="/login">Already have an account? Login here</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f5f5f5;
+        padding: 2rem 0;
+    }
+
+    .auth-form {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .auth-links {
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .auth-links a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .auth-links a:hover {
+        text-decoration: underline;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .alert {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        border-radius: 4px;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+</style>
+
+@code {
+    private RegisterRequest _registerRequest = new();
+    private bool _isLoading;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if user is already authenticated
+        if (await AuthService.IsAuthenticatedAsync())
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private async Task HandleRegisterAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            var response = await AuthService.RegisterAsync(_registerRequest);
+
+            if (response.Success)
+            {
+                _successMessage = "Registration successful! Please login to continue.";
+                await Task.Delay(2000); // Brief delay to show success message
+                NavigationManager.NavigateTo("/login");
+            }
+            else
+            {
+                _errorMessage = response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "An unexpected error occurred. Please try again.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

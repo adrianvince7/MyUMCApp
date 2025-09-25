@@ -4,7 +4,6 @@ using MyUMCApp.Client;
 using Blazored.LocalStorage;
 using Fluxor;
 using MudBlazor.Services;
-using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using MyUMCApp.Client.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -24,15 +23,12 @@ builder.Services.AddFluxor(options =>
 // Add local storage
 builder.Services.AddBlazoredLocalStorage();
 
-// Add authentication
-builder.Services.AddMsalAuthentication(options =>
-{
-    builder.Configuration.Bind("AzureAd", options.ProviderOptions.Authentication);
-    options.ProviderOptions.DefaultAccessTokenScopes.Add("api://api.myumcapp.com/api.access");
-});
+// Configure HTTP client for API
+var apiBaseAddress = builder.Configuration["ApiSettings:BaseAddress"] ?? "http://localhost:5294/";
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBaseAddress) });
 
-// Add HTTP client
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+// Add custom authentication service
+builder.Services.AddScoped<IApiAuthService, ApiAuthService>();
 
 // Add custom services
 builder.Services.AddScoped<IThemeService, ThemeService>();
@@ -40,8 +36,5 @@ builder.Services.AddScoped<ILanguageService, LanguageService>();
 builder.Services.AddScoped<ITranslationService, TranslationService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IEventService, EventService>();
-
-// Add JavaScript file references
-builder.RootComponents.Add<HeadContent>("head::after");
 
 await builder.Build().RunAsync();

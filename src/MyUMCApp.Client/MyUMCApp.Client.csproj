@@ -14,19 +14,14 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.1" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageReference Include="Fluxor.Blazor.Web" Version="5.9.1" />
     <PackageReference Include="MudBlazor" Version="8.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web.Extensions" Version="5.0.0-preview9.20513.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\MyUMCApp.Shared\MyUMCApp.Shared.csproj" />
   </ItemGroup>
 
 </Project>

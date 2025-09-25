@@ -78,6 +78,11 @@ coverage/
 *.coverage
 *.coveragexml
 
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
 # Logs
 logs/
 *.log
